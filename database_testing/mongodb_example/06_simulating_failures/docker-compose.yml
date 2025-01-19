@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  mongodb:
+    image: mongo:6.0
+    command: ["mongod", "--replSet", "rs0"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./init-replica-set.js:/docker-entrypoint-initdb.d/init-replica-set.js
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

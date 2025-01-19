@@ -1,0 +1,5 @@
+pytest
+testcontainers
+sqlalchemy
+requests
+redis

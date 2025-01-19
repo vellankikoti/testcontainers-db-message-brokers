@@ -1,0 +1,6 @@
+pytest
+testcontainers
+sqlalchemy
+mysql-connector-python
+statistics
+pymysql
