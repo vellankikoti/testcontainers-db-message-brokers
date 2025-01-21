@@ -1,54 +1,26 @@
-import time
-import json
-from kafka import KafkaProducer, KafkaConsumer
-from kafka.errors import KafkaError
+"""
+03_message_acknowledgements.py - Demonstrates Kafka message acknowledgements with Testcontainers.
+
+This example verifies that Kafka only commits messages after explicit acknowledgment.
+"""
+
 import pytest
+import time
 
-KAFKA_TOPIC = 'reservations'
-
-# Function to create a reservation
-def create_reservation(producer, reservation_id, guest_name):
-    message = {
-        'reservation_id': reservation_id,
-        'guest_name': guest_name,
-        'timestamp': time.time()
-    }
-    try:
-        producer.send(KAFKA_TOPIC, message)
-        producer.flush()
-        print(f"Reservation created: {message}")
-    except KafkaError as e:
-        print(f"Error sending message: {e}")
-
-# Function to handle reservation confirmations
-def handle_reservation_confirmation(consumer, max_messages=5):
-    message_count = 0
-    for message in consumer:
-        reservation_update = message.value
-        print(f"Received reservation update: {reservation_update}")
-        message_count += 1
-        if message_count >= max_messages:
-            break  # Exit after processing a limited number of messages
-
-# Test function to run the example
-def test_reservations(kafka_container):
-    producer = KafkaProducer(bootstrap_servers=kafka_container.get_bootstrap_server(),
-                             value_serializer=lambda v: json.dumps(v).encode('utf-8'))
-
-    consumer = KafkaConsumer(KAFKA_TOPIC,
-                             bootstrap_servers=kafka_container.get_bootstrap_server(),
-                             auto_offset_reset='earliest',
-                             enable_auto_commit=True,
-                             group_id='reservations_group',
-                             value_deserializer=lambda x: json.loads(x.decode('utf-8')))
-
-    # Create reservations
-    create_reservation(producer, reservation_id=1, guest_name='Alice')
-    create_reservation(producer, reservation_id=2, guest_name='Bob')
-
-    # Start handling reservation confirmation messages
-    print("Listening for reservation confirmations...")
-    handle_reservation_confirmation(consumer, max_messages=2)  # Limit to 2 messages for this example
-
-if __name__ == "__main__":
-    pytest.main([__file__])
+def test_kafka_message_acknowledgement(kafka_producer, kafka_consumer):
+    """Test that messages are only committed after acknowledgment."""
+    test_message = "Acknowledged Message"
+    kafka_producer.send("test_topic", test_message)
+    kafka_producer.flush()
+    
+    time.sleep(2)  # Allow time for message propagation
+    
+    for message in kafka_consumer:
+        assert message.value == test_message
+        kafka_consumer.commit()  # Explicit acknowledgment
+        break  # Exit after verifying the first message
+    
+    # Ensure that after acknowledgment, the message is not received again
+    kafka_consumer.seek_to_beginning()
+    messages_after_ack = [msg for msg in kafka_consumer]
+    assert len(messages_after_ack) == 0  # No reprocessing of acknowledged messages

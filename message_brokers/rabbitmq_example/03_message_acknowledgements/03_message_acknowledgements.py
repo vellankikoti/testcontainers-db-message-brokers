@@ -1,50 +1,29 @@
 """
-03_reservations.py - Reservation System
+03_message_acknowledgements.py - Demonstrates RabbitMQ message acknowledgements with Testcontainers.
 
-This example demonstrates a reservation system using RabbitMQ and Testcontainers.
-It tests handling reservation requests by sending messages to a RabbitMQ queue.
+This example verifies that messages are acknowledged properly.
 """
 
+import pytest
 import pika
 import time
 
-def make_reservation(guest_name, room_number, connection_params):
-    connection = pika.BlockingConnection(connection_params)
-    channel = connection.channel()
-
-    channel.queue_declare(queue='reservations')
-
-    message = f"Reservation made for {guest_name} in room {room_number}"
-    channel.basic_publish(exchange='', routing_key='reservations', body=message)
-    print(f"[x] Reservation made successfully for: {guest_name}")
-
-    connection.close()
-
-def test_make_reservation(rabbitmq_container):
-    """Test making a reservation."""
-    # Wait for RabbitMQ to be ready
-    time.sleep(5)  # Adjust as necessary for your environment
-
-    # Make a reservation using the RabbitMQ container's connection parameters
-    guest_name = "Alice"
-    room_number = "101"
-    make_reservation(guest_name, room_number, rabbitmq_container.get_connection_params())
-
-    # Connect to the RabbitMQ container to verify the message
-    connection = pika.BlockingConnection(rabbitmq_container.get_connection_params())
-    channel = connection.channel()
-
-    # Declare the queue
-    channel.queue_declare(queue='reservations')
-
-    # Verify the message was sent
-    method_frame, header_frame, body = channel.basic_get(queue='reservations', auto_ack=True)
-    expected_message = f"Reservation made for {guest_name} in room {room_number}"
-    assert body.decode() == expected_message
-
-    connection.close()
-
-if __name__ == "__main__":
-    # Example usage
-    with RabbitMqContainer("rabbitmq:3.9.10") as rabbitmq:
-        make_reservation("Alice", "101", rabbitmq.get_connection_params())
+def test_rabbitmq_message_acknowledgement(rabbitmq_connection):
+    """Test that messages in RabbitMQ require explicit acknowledgments."""
+    channel = rabbitmq_connection.channel()
+    channel.queue_declare(queue="ack_queue")
+    
+    channel.basic_publish(exchange='', routing_key="ack_queue", body="Acknowledgement Test Message")
+    
+    def callback(ch, method, properties, body):
+        assert body.decode("utf-8") == "Acknowledgement Test Message"
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    
+    channel.basic_consume(queue="ack_queue", on_message_callback=callback, auto_ack=False)
+    
+    method_frame, header_frame, body = channel.basic_get(queue="ack_queue", auto_ack=False)
+    assert body is not None
+    assert body.decode("utf-8") == "Acknowledgement Test Message"
+    
+    # Manually acknowledge the message
+    channel.basic_ack(delivery_tag=method_frame.delivery_tag)

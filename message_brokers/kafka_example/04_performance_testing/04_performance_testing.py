@@ -1,65 +1,31 @@
-import time
-import json
-from kafka import KafkaProducer, KafkaConsumer
-from kafka.errors import KafkaError
+"""
+04_performance_testing.py - Demonstrates Kafka performance testing with Testcontainers.
+
+This example measures Kafka message throughput under high load.
+"""
+
 import pytest
+import time
 
-KAFKA_TOPIC = 'occupancy_report'
-
-# Function to generate occupancy report
-def generate_occupancy_report(producer, report_id, occupancy_data):
-    message = {
-        'report_id': report_id,
-        'occupancy_data': occupancy_data,
-        'timestamp': time.time()
-    }
-    try:
-        producer.send(KAFKA_TOPIC, message)
-        producer.flush()
-        print(f"Occupancy report generated: {message}")
-    except KafkaError as e:
-        print(f"Error sending message: {e}")
-
-# Function to handle occupancy report confirmations
-def handle_occupancy_report_confirmation(consumer, max_messages=5, timeout=10):
-    message_count = 0
+def test_kafka_producer_performance(kafka_producer):
+    """Test Kafka producer performance by sending multiple messages."""
+    num_messages = 10000
     start_time = time.time()
+    for i in range(num_messages):
+        kafka_producer.send("test_topic", f"Message {i}")
+    kafka_producer.flush()
+    duration = time.time() - start_time
+    print(f"Sent {num_messages} messages in {duration:.2f} seconds")
+    assert duration < 10  # Expect all messages to be sent within 10 seconds
 
-    while message_count < max_messages:
-        # Poll for messages
-        message = consumer.poll(timeout_ms=100)  # Poll with a short timeout
-        if message:
-            for _, messages in message.items():
-                for msg in messages:
-                    report_update = msg.value
-                    print(f"Received occupancy report update: {report_update}")
-                    message_count += 1
-        # Check if the timeout has been reached
-        if time.time() - start_time > timeout:
-            print("Timeout reached, exiting...")
+def test_kafka_consumer_performance(kafka_consumer):
+    """Test Kafka consumer performance by consuming multiple messages."""
+    start_time = time.time()
+    count = 0
+    for message in kafka_consumer:
+        count += 1
+        if count >= 10000:
             break
-
-    consumer.close()  # Close the consumer after processing
-
-# Test function to run the example
-def test_occupancy_report(kafka_container):
-    producer = KafkaProducer(bootstrap_servers=kafka_container.get_bootstrap_server(),
-                             value_serializer=lambda v: json.dumps(v).encode('utf-8'))
-
-    consumer = KafkaConsumer(KAFKA_TOPIC,
-                             bootstrap_servers=kafka_container.get_bootstrap_server(),
-                             auto_offset_reset='earliest',
-                             enable_auto_commit=True,
-                             group_id='occupancy_report_group',
-                             value_deserializer=lambda x: json.loads(x.decode('utf-8')))
-
-    # Generate occupancy report
-    occupancy_data = {'room_101': 'occupied', 'room_102': 'available'}
-    generate_occupancy_report(producer, report_id=1, occupancy_data=occupancy_data)
-
-    # Start handling occupancy report confirmation messages
-    print("Listening for occupancy report confirmations...")
-    handle_occupancy_report_confirmation(consumer, max_messages=2, timeout=10)  # Limit to 2 messages for this example
-
-if __name__ == "__main__":
-    pytest.main([__file__])
+    duration = time.time() - start_time
+    print(f"Consumed {count} messages in {duration:.2f} seconds")
+    assert duration < 15  # Expect all messages to be consumed within 15 seconds

@@ -1,25 +1,20 @@
+"""
+conftest.py - Shared fixtures for Redis example
+"""
+
 import pytest
 from testcontainers.redis import RedisContainer
 import redis
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="module")
 def redis_container():
-    """Fixture to start a Redis container and provide a Redis client for tests."""
-    # Start a Redis container
-    with RedisContainer("redis:latest") as redis_container:
-        # Get the host and port for the Redis connection
-        host = redis_container.get_container_host_ip()
-        port = redis_container.get_exposed_port(6379)
+    """Start a Redis container and provide the connection details."""
+    with RedisContainer("redis:latest") as redis_server:
+        yield redis_server
 
-        # Create a Redis client
-        client = redis.StrictRedis(host=host, port=port, db=0)
-
-        # Wait for Redis to be ready
-        try:
-            client.ping()  # This will raise an exception if Redis is not ready
-        except redis.ConnectionError:
-            pytest.fail("Redis is not ready for connections.")
-
-        yield client  # Yield the Redis client for use in tests
-
-        # Optionally, you can add cleanup code here if needed
+@pytest.fixture(scope="module")
+def redis_client(redis_container):
+    """Set up a Redis client."""
+    client = redis.Redis(host=redis_container.get_container_host_ip(), port=redis_container.get_exposed_port(6379))
+    yield client
+    client.close()
