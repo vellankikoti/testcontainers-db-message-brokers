@@ -11,11 +11,11 @@ Welcome to the Database Testing section! This guide provides a comprehensive ove
   - [PostgreSQL](#postgresql)
   - [MongoDB](#mongodb)
 - [Examples](#examples)
-  - [01. Basic Guests](#01-basic-guests)
-  - [02. Room Management](#02-room-management)
-  - [03. Reservations](#03-reservations)
-  - [04. Occupancy Report](#04-occupancy-report)
-  - [05. Extended Stays](#05-extended-stays)
+  - [01. Basic CRUD Operations](#01-basic-crud-operations)
+  - [02. Schema Validation](#02-schema-validation)
+  - [03. Transaction Management](#03-transaction-management)
+  - [04. Performance Testing](#04-performance-testing)
+  - [05. Resilience Testing](#05-resilience-testing)
   - [06. Simulating Failures](#06-simulating-failures)
   - [07. Custom Docker Image](#07-custom-docker-image)
   - [08. Performance Testing](#08-performance-testing)
@@ -60,40 +60,40 @@ MongoDB is a NoSQL database that uses a document-oriented data model. Here, you 
 
 ## Examples
 
-### 01. Basic Guests
-- **Description**: Demonstrates a basic guest registration system using the respective database and Testcontainers.
+### 01. Basic CRUD Operations
+- **Description**: Demonstrates fundamental operations like Create, Read, Update, and Delete (CRUD) using the respective database and Testcontainers.
 - **Files**:
-  - MySQL: `mysql_example/01_basic_guests.py`
-  - PostgreSQL: `postgresql_example/01_basic_guests.py`
-  - MongoDB: `mongodb_example/01_basic_guests.py`
+  - MySQL: `mysql_example/01_basic_crud_operations.py`
+  - PostgreSQL: `postgresql_example/01_basic_crud_operations.py`
+  - MongoDB: `mongodb_example/01_basic_crud_operations.py`
 
-### 02. Room Management
-- **Description**: Manages room inventory and availability.
+### 02. Schema Validation
+- **Description**: Validates database schema, ensuring it matches expected structures and adheres to constraints such as primary keys, foreign keys, and unique constraints.
 - **Files**:
-  - MySQL: `mysql_example/02_room_management.py`
-  - PostgreSQL: `postgresql_example/02_room_management.py`
-  - MongoDB: `mongodb_example/02_room_management.py`
+  - MySQL: `mysql_example/02_schema_validation.py`
+  - PostgreSQL: `postgresql_example/02_schema_validation.py`
+  - MongoDB: `mongodb_example/02_schema_validation.py`
 
-### 03. Reservations
-- **Description**: Implements a database-backed reservation system.
+### 03. Transaction Management
+- **Description**: Tests the atomicity of database transactions, verifying that operations either fully succeed or fully fail, including rollback and commit behavior.
 - **Files**:
-  - MySQL: `mysql_example/03_reservations.py`
-  - PostgreSQL: `postgresql_example/03_reservations.py`
-  - MongoDB: `mongodb_example/03_reservations.py`
+  - MySQL: `mysql_example/03_transaction_management.py`
+  - PostgreSQL: `postgresql_example/03_transaction_management.py`
+  - MongoDB: `mongodb_example/03_transaction_management.py`
 
-### 04. Occupancy Report
-- **Description**: Generates reports on room occupancy.
+### 04. Performance Testing
+- **Description**: Simulates high-load scenarios to measure database performance and identify bottlenecks.
 - **Files**:
-  - MySQL: `mysql_example/04_occupancy_report.py`
-  - PostgreSQL: `postgresql_example/04_occupancy_report.py`
-  - MongoDB: `mongodb_example/04_occupancy_report.py`
+  - MySQL: `mysql_example/04_performance_testing.py`
+  - PostgreSQL: `postgresql_example/04_performance_testing.py`
+  - MongoDB: `mongodb_example/04_performance_testing.py`
 
-### 05. Extended Stays
-- **Description**: Handles extended stays and calculates durations.
+### 05. Resilience Testing
+- **Description**: Simulates database failures, such as container restarts or network interruptions, to ensure applications can recover and reconnect seamlessly.
 - **Files**:
-  - MySQL: `mysql_example/05_extended_stays.py`
-  - PostgreSQL: `postgresql_example/05_extended_stays.py`
-  - MongoDB: `mongodb_example/05_extended_stays.py`
+  - MySQL: `mysql_example/05_resilience_testing.py`
+  - PostgreSQL: `postgresql_example/05_resilience_testing.py`
+  - MongoDB: `mongodb_example/05_resilience_testing.py`
 
 ### 06. Simulating Failures
 - **Description**: Simulates database connection failures and resilience testing.
@@ -202,3 +202,4 @@ MongoDB is a NoSQL database that uses a document-oriented data model. Here, you 
 Feel free to contribute by adding new examples, improving existing ones, or reporting issues.
 
 Happy Testing! 🏨✨
+
