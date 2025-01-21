@@ -1,58 +1,60 @@
 """
-01_basic_guests.py - Basic Guest Registration System
+01_basic_crud.py - Basic CRUD operations with MongoDB and Testcontainers
 
-This example demonstrates a basic guest registration system using MongoDB and Testcontainers.
-It performs CRUD operations on a MongoDB collection to manage guest data.
+This example demonstrates how to perform Create, Read, Update, and Delete (CRUD) operations
+in a MongoDB container using Testcontainers.
 """
 
-def test_create_guest(guests_collection):
-    """Test creating a new guest."""
-    guest = {"name": "Alice", "email": "alice@example.com", "phone": "123-456-7890"}
-    result = guests_collection.insert_one(guest)
+import pytest
+
+def test_create_document(test_collection):
+    """Test inserting a new document."""
+    document = {"name": "Alice", "email": "alice@example.com", "phone": "123-456-7890"}
+    result = test_collection.insert_one(document)
     assert result.inserted_id is not None
 
-    # Verify the guest was added
-    saved_guest = guests_collection.find_one({"_id": result.inserted_id})
-    assert saved_guest["name"] == "Alice"
-    assert saved_guest["email"] == "alice@example.com"
-    assert saved_guest["phone"] == "123-456-7890"
+    # Verify the document was added
+    saved_document = test_collection.find_one({"_id": result.inserted_id})
+    assert saved_document["name"] == "Alice"
+    assert saved_document["email"] == "alice@example.com"
+    assert saved_document["phone"] == "123-456-7890"
 
 
-def test_read_guest(guests_collection):
-    """Test reading a guest's details."""
-    guest = {"name": "Bob", "email": "bob@example.com", "phone": "987-654-3210"}
-    guests_collection.insert_one(guest)
+def test_read_document(test_collection):
+    """Test retrieving a document from the collection."""
+    document = {"name": "Bob", "email": "bob@example.com", "phone": "987-654-3210"}
+    test_collection.insert_one(document)
 
-    # Verify the guest can be read
-    saved_guest = guests_collection.find_one({"email": "bob@example.com"})
-    assert saved_guest is not None
-    assert saved_guest["name"] == "Bob"
-    assert saved_guest["phone"] == "987-654-3210"
+    # Verify the document can be read
+    saved_document = test_collection.find_one({"email": "bob@example.com"})
+    assert saved_document is not None
+    assert saved_document["name"] == "Bob"
+    assert saved_document["phone"] == "987-654-3210"
 
 
-def test_update_guest(guests_collection):
-    """Test updating a guest's details."""
-    guest = {"name": "Charlie", "email": "charlie@example.com", "phone": "555-555-5555"}
-    result = guests_collection.insert_one(guest)
+def test_update_document(test_collection):
+    """Test updating an existing document."""
+    document = {"name": "Charlie", "email": "charlie@example.com", "phone": "555-555-5555"}
+    result = test_collection.insert_one(document)
 
-    # Update the guest's phone number
-    guests_collection.update_one(
+    # Update the phone number
+    test_collection.update_one(
         {"_id": result.inserted_id}, {"$set": {"phone": "111-111-1111"}}
     )
 
     # Verify the update
-    updated_guest = guests_collection.find_one({"_id": result.inserted_id})
-    assert updated_guest["phone"] == "111-111-1111"
+    updated_document = test_collection.find_one({"_id": result.inserted_id})
+    assert updated_document["phone"] == "111-111-1111"
 
 
-def test_delete_guest(guests_collection):
-    """Test deleting a guest."""
-    guest = {"name": "Dave", "email": "dave@example.com", "phone": "444-444-4444"}
-    result = guests_collection.insert_one(guest)
+def test_delete_document(test_collection):
+    """Test deleting a document from the collection."""
+    document = {"name": "Dave", "email": "dave@example.com", "phone": "444-444-4444"}
+    result = test_collection.insert_one(document)
 
-    # Delete the guest
-    guests_collection.delete_one({"_id": result.inserted_id})
+    # Delete the document
+    test_collection.delete_one({"_id": result.inserted_id})
 
-    # Verify the guest was deleted
-    deleted_guest = guests_collection.find_one({"_id": result.inserted_id})
-    assert deleted_guest is None
+    # Verify the document was deleted
+    deleted_document = test_collection.find_one({"_id": result.inserted_id})
+    assert deleted_document is None
