@@ -1,4 +1,4 @@
-# Example 1: Basic Guests (MongoDB)
+# Example 1: Basic CRUD Operations (MongoDB)
 
 This example demonstrates how to use Testcontainers to test basic MongoDB database operations. It covers the following:
 
@@ -11,12 +11,12 @@ This example demonstrates how to use Testcontainers to test basic MongoDB databa
 
 ## Overview
 
-The test simulates a simple hotel guest management system. It creates a `guests` collection, inserts sample data, and performs the following operations:
+The test simulates a general-purpose document storage scenario. It creates a `users` collection, inserts sample data, and performs the following operations:
 
-1. **Insert**: Add guest records to the database.
-2. **Select**: Retrieve and count the number of guests.
-3. **Update**: Modify a guest's phone number.
-4. **Delete**: Remove a guest record.
+1. **Insert**: Add user records to the database.
+2. **Select**: Retrieve and count the number of users.
+3. **Update**: Modify a user's email address.
+4. **Delete**: Remove a user record.
 
 The test ensures that all operations are performed correctly and validates the results using assertions.
 
@@ -31,7 +31,7 @@ The test ensures that all operations are performed correctly and validates the r
 
 ### Database Operations
 
-- Creates a `guests` collection in the MongoDB database.
+- Creates a `users` collection in the MongoDB database.
 - Performs CRUD operations and validates the results.
 
 ### Assertions
@@ -61,13 +61,13 @@ pip3 install pytest testcontainers pymongo
 Execute the test file using `pytest`:
 
 ```bash
-python -m pytest 01_basic_guests.py -v -s
+python -m pytest 01_basic_crud.py -v -s
 ```
 
 or
 
 ```bash
-python3 -m pytest 01_basic_guests.py -v -s
+python3 -m pytest 01_basic_crud.py -v -s
 ```
 
 ---
@@ -76,7 +76,6 @@ python3 -m pytest 01_basic_guests.py -v -s
 
 When you run the test, you should see output similar to the following:
 
-![image](https://github.com/user-attachments/assets/725e9979-685c-4073-80b1-fb466cb427b3)
 
 
 ---
@@ -97,31 +96,31 @@ with MongoDbContainer("mongo:6.0") as mongo:
 
 ### 2. Database Collection
 
-The `guests_collection` fixture sets up the `guests` collection in the MongoDB database:
+The `users_collection` fixture sets up the `users` collection in the MongoDB database:
 
 ```python
 db = mongodb_client.get_database("test_db")
-collection = db.get_collection("guests")
+collection = db.get_collection("users")
 ```
 
 - The `test_db` database is created automatically.
-- The `guests` collection is used to store guest records.
+- The `users` collection is used to store user records.
 
 ### 3. CRUD Operations
 
-- **Insert**: Adds guest records to the collection.
-- **Select**: Retrieves guest records by specific criteria.
-- **Update**: Updates the phone number of a guest.
-- **Delete**: Deletes a guest record.
+- **Insert**: Adds user records to the collection.
+- **Select**: Retrieves user records by specific criteria.
+- **Update**: Updates the email of a user.
+- **Delete**: Deletes a user record.
 
 ### 4. Assertions
 
 The test uses assertions to validate the results of each operation:
 
 ```python
-assert saved_guest["name"] == "Alice"
-assert updated_guest["phone"] == "111-111-1111"
-assert deleted_guest is None
+assert saved_user["name"] == "Alice"
+assert updated_user["email"] == "alice@example.com"
+assert deleted_user is None
 ```
 
 ---
@@ -147,3 +146,4 @@ assert deleted_guest is None
 - Ensures the database behaves as expected.
 
 ---
+
