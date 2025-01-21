@@ -8,11 +8,11 @@ This repository contains a collection of examples demonstrating how to use Testc
 ## **Table of Contents**
 1. [Getting Started](#getting-started)
 2. [Examples](#examples)
-    - [01. Basic Guests](#01-basic-guests)
-    - [02. Room Management](#02-room-management)
-    - [03. Reservations](#03-reservations)
-    - [04. Occupancy Report](#04-occupancy-report)
-    - [05. Extended Stays](#05-extended-stays)
+    - [01. Basic CRUD Operations](#01-basic-crud-operations)
+    - [02. Indexing and Performance](#02-indexing-and-performance)
+    - [03. Transactions](#03-transactions)
+    - [04. Aggregation Queries](#04-aggregation-queries)
+    - [05. Schema Validation](#05-schema-validation)
     - [06. Simulating Failures](#06-simulating-failures)
     - [07. Custom Docker Image](#07-custom-docker-image)
     - [08. Performance Testing](#08-performance-testing)
@@ -43,30 +43,30 @@ This repository contains a collection of examples demonstrating how to use Testc
 
 ## **Examples**
 
-### 01. Basic Guests
-**Description**: Demonstrates a basic guest registration system using MongoDB and Testcontainers.  
-**File**: `mongodb_example/01_basic_guests.py`  
-**README**: [README.md](01_basic_guests/README.md)
+### 01. Basic CRUD Operations
+**Description**: Demonstrates how to perform basic Create, Read, Update, and Delete operations using MongoDB and Testcontainers.  
+**File**: `mongodb_example/01_basic_crud_operations.py`  
+**README**: [README.md](01_basic_crud_operations/README.md)
 
-### 02. Room Management
-**Description**: Manages room inventory and availability.  
-**File**: `mongodb_example/02_room_management.py`  
-**README**: [README.md](02_room_management/README.md)
+### 02. Indexing and Performance
+**Description**: Shows how to create and use indexes in MongoDB to improve query performance.  
+**File**: `mongodb_example/02_indexing_and_performance.py`  
+**README**: [README.md](02_indexing_and_performance/README.md)
 
-### 03. Reservations
-**Description**: Implements a MongoDB-backed reservation system.  
-**File**: `mongodb_example/03_reservations.py`  
-**README**: [README.md](03_reservations/README.md)
+### 03. Transactions
+**Description**: Implements MongoDB transactions and tests ACID compliance.  
+**File**: `mongodb_example/03_transactions.py`  
+**README**: [README.md](03_transactions/README.md)
 
-### 04. Occupancy Report
-**Description**: Generates reports on room occupancy.  
-**File**: `mongodb_example/04_occupancy_report.py`  
-**README**: [README.md](04_occupancy_report/README.md)
+### 04. Aggregation Queries
+**Description**: Demonstrates the use of aggregation pipelines for complex data analysis.  
+**File**: `mongodb_example/04_aggregation_queries.py`  
+**README**: [README.md](04_aggregation_queries/README.md)
 
-### 05. Extended Stays
-**Description**: Handles extended stays and calculates durations.  
-**File**: `mongodb_example/05_extended_stays.py`  
-**README**: [README.md](05_extended_stays/README.md)
+### 05. Schema Validation
+**Description**: Shows how to enforce schema validation in MongoDB collections.  
+**File**: `mongodb_example/05_schema_validation.py`  
+**README**: [README.md](05_schema_validation/README.md)
 
 ### 06. Simulating Failures
 **Description**: Simulates database connection failures and resilience testing.  
@@ -166,3 +166,4 @@ The `conftest.py` file defines shared fixtures for Testcontainers, enabling you 
 Feel free to contribute by adding new examples, improving existing ones, or reporting issues.
 
 ---
+
