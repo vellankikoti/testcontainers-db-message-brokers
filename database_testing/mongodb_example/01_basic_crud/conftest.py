@@ -1,18 +1,16 @@
 """
-conftest.py - Shared fixtures for MongoDB examples
+conftest.py - Shared fixtures for MongoDB example
 """
 
 import pytest
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
 
-
 @pytest.fixture(scope="module")
 def mongodb_container():
     """Start a MongoDB container and provide the connection URL."""
     with MongoDbContainer("mongo:6.0") as mongo:
         yield mongo.get_connection_url()
-
 
 @pytest.fixture(scope="module")
 def mongodb_client(mongodb_container):
@@ -21,12 +19,11 @@ def mongodb_client(mongodb_container):
     yield client
     client.close()
 
-
 @pytest.fixture(scope="module")
-def guests_collection(mongodb_client):
-    """Set up the 'guests' collection in the MongoDB database."""
+def test_collection(mongodb_client):
+    """Set up the 'test_data' collection in the MongoDB database."""
     db = mongodb_client.get_database("test_db")
-    collection = db.get_collection("guests")
+    collection = db.get_collection("test_data")
     # Ensure the collection is empty before starting tests
     collection.delete_many({})
     yield collection
