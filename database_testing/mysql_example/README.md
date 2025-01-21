@@ -1,17 +1,17 @@
-# MySQL with Testcontainers
+# **MySQL with Testcontainers**
 
-## Overview
+## **Overview**
 This repository contains a collection of examples demonstrating how to use Testcontainers with MySQL for testing various scenarios in Python. Each example is accompanied by a detailed `README.md` file to help you understand the concepts and implementation.
 
-## Table of Contents
+## **Table of Contents**
 
 - [Getting Started](#getting-started)
 - [Examples](#examples)
-  - [01. Basic Guests](#01-basic-guests)
-  - [02. Room Management](#02-room-management)
-  - [03. Reservations](#03-reservations)
-  - [04. Occupancy Report](#04-occupancy-report)
-  - [05. Extended Stays](#05-extended-stays)
+  - [01. Basic CRUD Operations](#01-basic-crud-operations)
+  - [02. Indexing and Performance](#02-indexing-and-performance)
+  - [03. Transactions](#03-transactions)
+  - [04. Aggregation Queries](#04-aggregation-queries)
+  - [05. Schema Validation](#05-schema-validation)
   - [06. Simulating Failures](#06-simulating-failures)
   - [07. Custom Docker Image](#07-custom-docker-image)
   - [08. Performance Testing](#08-performance-testing)
@@ -26,9 +26,9 @@ This repository contains a collection of examples demonstrating how to use Testc
 - [Conftest.py](#conftestpy)
 - [Contributing](#contributing)
 
-## Getting Started
+## **Getting Started**
 
-### Prerequisites
+### **Prerequisites**
 
 - Python 3.10 or later
 - Docker installed and running on your system
@@ -37,32 +37,32 @@ This repository contains a collection of examples demonstrating how to use Testc
   pip install pytest mysql-connector-python sqlalchemy testcontainers
   ```
 
-## Examples
+## **Examples**
 
-### 01. Basic Guests
-- **Description**: Demonstrates a basic guest registration system using MySQL and Testcontainers.
-- **File**: `mysql_example/01_basic_guests.py`
-- **README**: [README.md](01_basic_guests/README.md)
+### 01. Basic CRUD Operations
+- **Description**: Demonstrates basic Create, Read, Update, and Delete operations using MySQL and Testcontainers.
+- **File**: `mysql_example/01_basic_crud_operations.py`
+- **README**: [README.md](01_basic_crud_operations/README.md)
 
-### 02. Room Management
-- **Description**: Manages room inventory and availability.
-- **File**: `mysql_example/02_room_management.py`
-- **README**: [README.md](02_room_management/README.md)
+### 02. Indexing and Performance
+- **Description**: Shows how to create and use indexes in MySQL to improve query performance.
+- **File**: `mysql_example/02_indexing_and_performance.py`
+- **README**: [README.md](02_indexing_and_performance/README.md)
 
-### 03. Reservations
-- **Description**: Implements a MySQL-backed reservation system.
-- **File**: `mysql_example/03_reservations.py`
-- **README**: [README.md](03_reservations/README.md)
+### 03. Transactions
+- **Description**: Implements MySQL transactions and tests ACID compliance.
+- **File**: `mysql_example/03_transactions.py`
+- **README**: [README.md](03_transactions/README.md)
 
-### 04. Occupancy Report
-- **Description**: Generates reports on room occupancy.
-- **File**: `mysql_example/04_occupancy_report.py`
-- **README**: [README.md](04_occupancy_report/README.md)
+### 04. Aggregation Queries
+- **Description**: Demonstrates the use of aggregation functions for data analysis.
+- **File**: `mysql_example/04_aggregation_queries.py`
+- **README**: [README.md](04_aggregation_queries/README.md)
 
-### 05. Extended Stays
-- **Description**: Handles extended stays and calculates durations.
-- **File**: `mysql_example/05_extended_stays.py`
-- **README**: [README.md](05_extended_stays/README.md)
+### 05. Schema Validation
+- **Description**: Shows how to enforce schema validation in MySQL.
+- **File**: `mysql_example/05_schema_validation.py`
+- **README**: [README.md](05_schema_validation/README.md)
 
 ### 06. Simulating Failures
 - **Description**: Simulates database connection failures and resilience testing.
@@ -109,7 +109,7 @@ This repository contains a collection of examples demonstrating how to use Testc
 - **File**: `mysql_example/14_security_testing.py`
 - **README**: [README.md](14_security_testing/README.md)
 
-## How to Run the Examples
+## **How to Run the Examples**
 
 1. Clone the repository:
    ```bash
@@ -137,7 +137,7 @@ This repository contains a collection of examples demonstrating how to use Testc
 
 4. View the README file for detailed information about each example.
 
-## Troubleshooting
+## **Troubleshooting**
 
 ### Common Issues
 
@@ -153,14 +153,13 @@ This repository contains a collection of examples demonstrating how to use Testc
 
 - **Insufficient Resources**: Allocate more CPU and memory to Docker if containers fail to start.
 
-## Conftest.py
+## **Conftest.py**
 
 The `conftest.py` file defines shared fixtures for Testcontainers, enabling you to initialize and manage container instances for multiple tests.
 
-## Contributing
+## **Contributing**
 
 Feel free to contribute by adding new examples, improving existing ones, or reporting issues.
 
 ---
 
-Happy Testing at the Happy Hotel! 🏨✨
