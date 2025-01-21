@@ -1,12 +1,44 @@
+"""
+conftest.py - Shared fixtures for PostgreSQL example
+"""
+
 import pytest
+from testcontainers.postgres import PostgresContainer
+import psycopg2
 
-def pytest_configure(config):
-    """Configure pytest markers for the test suite.
+@pytest.fixture(scope="module")
+def postgres_container():
+    """Start a PostgreSQL container and provide the connection details."""
+    with PostgresContainer("postgres:15") as postgres:
+        yield postgres
 
-    This configuration registers custom markers used across the test suite:
-    - basic: Used for basic CRUD operation tests
-    """
-    config.addinivalue_line(
-        "markers",
-        "basic: mark test as a basic CRUD operation test case"
+@pytest.fixture(scope="module")
+def postgres_connection(postgres_container):
+    """Create a PostgreSQL connection using the container credentials."""
+    connection = psycopg2.connect(
+        host=postgres_container.get_container_host_ip(),
+        port=postgres_container.get_exposed_port(5432),
+        user=postgres_container.USER,
+        password=postgres_container.PASSWORD,
+        dbname=postgres_container.DBNAME
     )
+    yield connection
+    connection.close()
+
+@pytest.fixture(scope="module")
+def create_table(postgres_connection):
+    """Set up a test table for basic CRUD operations."""
+    cursor = postgres_connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS guests (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            phone VARCHAR(20)
+        )
+    """)
+    postgres_connection.commit()
+    yield cursor
+    cursor.execute("DROP TABLE guests")
+    postgres_connection.commit()
+    cursor.close()
