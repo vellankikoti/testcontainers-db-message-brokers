@@ -8,16 +8,16 @@ This repository contains a collection of examples demonstrating how to use Testc
 ## **Table of Contents**
 1. [Getting Started](#getting-started)
 2. [Examples](#examples)
-    - [01. Basic Guests](#01-basic-guests)
-    - [02. Room Management](#02-room-management)
-    - [03. Reservations](#03-reservations)
-    - [04. Occupancy Report](#04-occupancy-report)
-    - [05. Extended Stays](#05-extended-stays)
+    - [01. Basic Pub/Sub](#01-basic-pub-sub)
+    - [02. Message Persistence](#02-message-persistence)
+    - [03. Message Acknowledgements](#03-message-acknowledgements)
+    - [04. Performance Testing](#04-performance-testing)
+    - [05. Resilience Testing](#05-resilience-testing)
     - [06. Simulating Failures](#06-simulating-failures)
     - [07. Custom Docker Image](#07-custom-docker-image)
-    - [08. Performance Testing](#08-performance-testing)
+    - [08. Schema Evolution](#08-schema-evolution)
     - [09. Data Migration Testing](#09-data-migration-testing)
-    - [10. Multiple Containers](#10-multiple-containers)
+    - [10. Multi-Broker Clusters](#10-multi-broker-clusters)
     - [11. Simulating Network Interruptions](#11-simulating-network-interruptions)
     - [12. Distributed Transactions](#12-distributed-transactions)
     - [13. Testing with Mock Services](#13-testing-with-mock-services)
@@ -41,74 +41,74 @@ This repository contains a collection of examples demonstrating how to use Testc
 
 ## **Examples**
 
-### 01. Basic Guests
-**Description**: A basic scenario simulating Kafka producer and consumer for guest registration and messaging.  
-**File**: `01_basic_guests.py`  
-**README**: [README.md](01_basic_guests/README.md)
+### 01. Basic Pub/Sub
+**Description**: Demonstrates a basic Kafka producer-consumer workflow using a publish-subscribe model.  
+**File**: `01_basic_pubsub.py`  
+**README**: [README.md](01_basic_pubsub/README.md)
 
-### 02. Room Management
-**Description**: Kafka-based management of rooms, allowing the tracking of room availability and booking status.  
-**File**: `02_room_management.py`  
-**README**: [README.md](02_room_management/README.md)
+### 02. Message Persistence
+**Description**: Ensures that Kafka persists messages even if a consumer crashes.  
+**File**: `02_message_persistence.py`  
+**README**: [README.md](02_message_persistence/README.md)
 
-### 03. Reservations
-**Description**: Implementing Kafka producers and consumers to handle room reservations, cancellations, and updates.  
-**File**: `03_reservations.py`  
-**README**: [README.md](03_reservations/README.md)
+### 03. Message Acknowledgements
+**Description**: Validates Kafka’s at-least-once and exactly-once message delivery guarantees.  
+**File**: `03_message_acknowledgements.py`  
+**README**: [README.md](03_message_acknowledgements/README.md)
 
-### 04. Occupancy Report
-**Description**: Generate Kafka messages to simulate occupancy reports based on room booking and cancellation events.  
-**File**: `04_occupancy_report.py`  
-**README**: [README.md](04_occupancy_report/README.md)
+### 04. Performance Testing
+**Description**: Measures Kafka’s throughput and latency under high-load conditions.  
+**File**: `04_performance_testing.py`  
+**README**: [README.md](04_performance_testing/README.md)
 
-### 05. Extended Stays
-**Description**: Simulate the processing of extended stays using Kafka streams, tracking changes in reservation lengths.  
-**File**: `05_extended_stays.py`  
-**README**: [README.md](05_extended_stays/README.md)
+### 05. Resilience Testing
+**Description**: Tests how Kafka handles producer and consumer failures.  
+**File**: `05_resilience_testing.py`  
+**README**: [README.md](05_resilience_testing/README.md)
 
 ### 06. Simulating Failures
-**Description**: Simulate Kafka failures, including broker downtime and message loss, to test system resilience.  
+**Description**: Simulates Kafka broker failures and network disruptions.  
 **File**: `06_simulating_failures.py`  
 **README**: [README.md](06_simulating_failures/README.md)
 
 ### 07. Custom Docker Image
-**Description**: Create and use a custom Docker image for Kafka, demonstrating the process of custom configuration and testing.  
+**Description**: Creates and tests a custom Kafka Docker image with specific configurations.  
 **File**: `07_custom_docker_image.py`  
 **Dockerfile**: `Dockerfile`  
 **README**: [README.md](07_custom_docker_image/README.md)
 
-### 08. Performance Testing
-**Description**: Conduct performance tests on Kafka to measure message throughput and latency under heavy load.  
-**File**: `08_performance_testing.py`  
-**README**: [README.md](08_performance_testing/README.md)
+### 08. Schema Evolution
+**Description**: Tests Kafka schema evolution using Avro or Protobuf.  
+**File**: `08_schema_evolution.py`  
+**README**: [README.md](08_schema_evolution/README.md)
 
 ### 09. Data Migration Testing
-**Description**: Use Kafka to simulate data migration events, ensuring data integrity during the migration process.  
+**Description**: Uses Kafka for migrating data between different database systems.  
 **File**: `09_data_migration_testing.py`  
 **README**: [README.md](09_data_migration_testing/README.md)
 
-### 10. Multiple Containers
-**Description**: Testing Kafka in a multi-container setup, with multiple producers, consumers, and Kafka brokers running simultaneously.  
-**File**: `10_multiple_containers.py`  
-**README**: [README.md](10_multiple_containers/README.md)
+### 10. Multi-Broker Clusters
+**Description**: Simulates and tests Kafka running in a multi-broker cluster setup.  
+**File**: `10_multi_broker_clusters.py`  
+**README**: [README.md](10_multi_broker_clusters/README.md)
 
 ### 11. Simulating Network Interruptions
-**Description**: Simulate network interruptions and how Kafka handles retries, message delays, and message re-ordering.  
+**Description**: Tests Kafka’s ability to recover from network disruptions.  
 **File**: `11_simulating_network_interruptions.py`  
 **README**: [README.md](11_simulating_network_interruptions/README.md)
 
 ### 12. Distributed Transactions
-**Description**: Use Kafka to implement distributed transactions across multiple systems.  
+**Description**: Implements distributed transactions across multiple Kafka topics.  
 **File**: `12_distributed_transactions.py`  
 **README**: [README.md](12_distributed_transactions/README.md)
 
 ### 13. Testing with Mock Services
-**Description**: Mock external services (e.g., databases, payment gateways) that interact with Kafka for more controlled testing.  
+**Description**: Mocks external services that interact with Kafka for better test control.  
 **File**: `13_testing_with_mock_services.py`  
 **README**: [README.md](13_testing_with_mock_services/README.md)
 
 ### 14. Security Testing
-**Description**: Implement Kafka security measures such as SSL encryption, authentication, and authorization to test secure communication.  
+**Description**: Tests Kafka’s authentication, authorization, and encryption mechanisms.  
 **File**: `14_security_testing.py`  
 **README**: [README.md](14_security_testing/README.md)
 
@@ -151,9 +151,7 @@ For more troubleshooting tips, refer to the troubleshooting guide.
 ---
 
 ## **Conftest.py**
-The `conftest.py` file is used to define fixtures that can be shared across multiple test files in your examples. It typically contains setup code for Testcontainers, allowing you to initialize and manage Kafka container instances for testing purposes. This helps to avoid code duplication and keeps your test files clean and focused on the actual test logic.
-
-For example, in your Testcontainers setup, `conftest.py` might include a fixture that starts a Kafka container, which can then be used in various test cases across different example files.
+The `conftest.py` file is used to define fixtures that can be shared across multiple test files. It typically contains setup code for Testcontainers, allowing you to initialize and manage Kafka container instances for testing purposes.
 
 ---
 
@@ -162,8 +160,5 @@ Feel free to contribute by adding new examples, improving existing ones, or repo
 
 ---
 
-### Key Updates
-- **Added Section for `conftest.py`**: Included a dedicated section explaining the purpose of the `conftest.py` file and how it is used to manage shared fixtures for your tests.
-- **Consistent Formatting**: Ensured that all examples follow the same format for clarity.
+## 🚀 Happy Testing with Kafka and Testcontainers! 🎉
 
----
