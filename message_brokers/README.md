@@ -11,14 +11,14 @@ Welcome to the Message Brokers Testing section! In this guide, we will explore h
     - [Kafka](#kafka)
     - [Redis](#redis)
 - [Examples](#examples)
-    - [01. Basic Guests](#01-basic-guests)
-    - [02. Room Management](#02-room-management)
-    - [03. Reservations](#03-reservations)
-    - [04. Occupancy Report](#04-occupancy-report)
-    - [05. Extended Stays](#05-extended-stays)
+    - [01. Basic Publish/Subscribe Operations](#01-basic-publish-subscribe-operations)
+    - [02. Message Persistence](#02-message-persistence)
+    - [03. Message Acknowledgements](#03-message-acknowledgements)
+    - [04. Performance Testing](#04-performance-testing)
+    - [05. Resilience Testing](#05-resilience-testing)
     - [06. Simulating Failures](#06-simulating-failures)
     - [07. Custom Docker Image](#07-custom-docker-image)
-    - [08. Performance Testing](#08-performance-testing)
+    - [08. Load Testing](#08-load-testing)
     - [09. Data Migration Testing](#09-data-migration-testing)
     - [10. Multiple Containers](#10-multiple-containers)
     - [11. Simulating Network Interruptions](#11-simulating-network-interruptions)
@@ -47,113 +47,78 @@ This repository contains a collection of examples demonstrating how to use Testc
 ### Message Brokers
 
 #### RabbitMQ
-RabbitMQ is a widely used message broker that implements the Advanced Message Queuing Protocol (AMQP). In this section, you will find examples demonstrating how to interact with RabbitMQ using Testcontainers.
+RabbitMQ is a widely used message broker that implements the Advanced Message Queuing Protocol (AMQP). This section demonstrates how to use Testcontainers for RabbitMQ testing.
 
 #### Kafka
 Kafka is a distributed event streaming platform used for building real-time data pipelines and streaming applications. This section provides examples showcasing Kafka in a testing environment with Testcontainers.
 
 #### Redis
-Redis is an in-memory data structure store that can be used as a database, cache, or message broker. In this section, we provide examples for testing Redis with Testcontainers.
+Redis is an in-memory data structure store that can be used as a database, cache, or message broker. This section includes examples of using Testcontainers to test Redis messaging features.
 
 ## Examples
 
-### 01. Basic Guests
-**Description:** Demonstrates a basic guest messaging system using the respective message broker and Testcontainers.  
+### 01. Basic Publish/Subscribe Operations
+**Description:** Tests the basic ability to send and receive messages via the respective message broker.
 **Files:**
-- RabbitMQ: `rabbitmq_example/01_basic_guests.py`
-- Kafka: `kafka_example/01_basic_guests.py`
-- Redis: `redis_example/01_basic_guests.py`
+- RabbitMQ: `rabbitmq_example/01_basic_pub_sub.py`
+- Kafka: `kafka_example/01_basic_pub_sub.py`
+- Redis: `redis_example/01_basic_pub_sub.py`
 
-### 02. Room Management
-**Description:** Manages room availability and updates using the respective message broker.  
+### 02. Message Persistence
+**Description:** Verifies that messages persist across broker restarts where applicable.
 **Files:**
-- RabbitMQ: `rabbitmq_example/02_room_management.py`
-- Kafka: `kafka_example/02_room_management.py`
-- Redis: `redis_example/02_room_management.py`
+- RabbitMQ: `rabbitmq_example/02_message_persistence.py`
+- Kafka: `kafka_example/02_message_persistence.py`
+- Redis: `redis_example/02_message_persistence.py`
 
-### 03. Reservations
-**Description:** Implements a reservation system with messages being published and consumed from the message broker.  
+### 03. Message Acknowledgements
+**Description:** Ensures that messages are acknowledged and re-queued appropriately.
 **Files:**
-- RabbitMQ: `rabbitmq_example/03_reservations.py`
-- Kafka: `kafka_example/03_reservations.py`
-- Redis: `redis_example/03_reservations.py`
+- RabbitMQ: `rabbitmq_example/03_message_acknowledgements.py`
+- Kafka: `kafka_example/03_message_acknowledgements.py`
+- Redis: `redis_example/03_message_acknowledgements.py`
 
-### 04. Occupancy Report
-**Description:** Generates room occupancy reports using a message-driven architecture.  
+### 04. Performance Testing
+**Description:** Measures the message broker’s performance under high-load scenarios.
 **Files:**
-- RabbitMQ: `rabbitmq_example/04_occupancy_report.py`
-- Kafka: `kafka_example/04_occupancy_report.py`
-- Redis: `redis_example/04_occupancy_report.py`
+- RabbitMQ: `rabbitmq_example/04_performance_testing.py`
+- Kafka: `kafka_example/04_performance_testing.py`
+- Redis: `redis_example/04_performance_testing.py`
 
-### 05. Extended Stays
-**Description:** Handles extended stays by sending and receiving messages related to stay duration updates.  
+### 05. Resilience Testing
+**Description:** Tests the ability of message brokers to recover from failures.
 **Files:**
-- RabbitMQ: `rabbitmq_example/05_extended_stays.py`
-- Kafka: `kafka_example/05_extended_stays.py`
-- Redis: `redis_example/05_extended_stays.py`
+- RabbitMQ: `rabbitmq_example/05_resilience_testing.py`
+- Kafka: `kafka_example/05_resilience_testing.py`
+- Redis: `redis_example/05_resilience_testing.py`
 
 ### 06. Simulating Failures
-**Description:** Simulates message broker failures and handles message redelivery.  
+**Description:** Simulates message broker failures and handles message redelivery.
 **Files:**
 - RabbitMQ: `rabbitmq_example/06_simulating_failures.py`
 - Kafka: `kafka_example/06_simulating_failures.py`
 - Redis: `redis_example/06_simulating_failures.py`
 
 ### 07. Custom Docker Image
-**Description:** Builds and uses a custom Docker image with pre-configured messages and queues.  
+**Description:** Builds and uses a custom Docker image with pre-configured queues and topics.
 **Files:**
 - RabbitMQ: `rabbitmq_example/07_custom_docker_image.py`
 - Kafka: `kafka_example/07_custom_docker_image.py`
 - Redis: `redis_example/07_custom_docker_image.py`
 
-### 08. Performance Testing
-**Description:** Measures message broker performance under high-load scenarios.  
+### 08. Load Testing
+**Description:** Simulates message loads to evaluate broker performance.
 **Files:**
-- RabbitMQ: `rabbitmq_example/08_performance_testing.py`
-- Kafka: `kafka_example/08_performance_testing.py`
-- Redis: `redis_example/08_performance_testing.py`
+- RabbitMQ: `rabbitmq_example/08_load_testing.py`
+- Kafka: `kafka_example/08_load_testing.py`
+- Redis: `redis_example/08_load_testing.py`
 
 ### 09. Data Migration Testing
-**Description:** Validates data migration between different message brokers.  
+**Description:** Ensures messages are successfully migrated between different brokers.
 **Files:**
 - RabbitMQ: `rabbitmq_example/09_data_migration_testing.py`
 - Kafka: `kafka_example/09_data_migration_testing.py`
 - Redis: `redis_example/09_data_migration_testing.py`
-
-### 10. Multiple Containers
-**Description:** Verifies interactions between multiple containers (e.g., message brokers and databases).  
-**Files:**
-- RabbitMQ: `rabbitmq_example/10_multiple_containers.py`
-- Kafka: `kafka_example/10_multiple_containers.py`
-- Redis: `redis_example/10_multiple_containers.py`
-
-### 11. Simulating Network Interruptions
-**Description:** Tests message broker resilience during network disruptions.  
-**Files:**
-- RabbitMQ: `rabbitmq_example/11_simulating_network_interruptions.py`
-- Kafka: `kafka_example/11_simulating_network_interruptions.py`
-- Redis: `redis_example/11_simulating_network_interruptions.py`
-
-### 12. Distributed Transactions
-**Description:** Ensures message delivery across distributed systems with transactional integrity.  
-**Files:**
-- RabbitMQ: `rabbitmq_example/12_distributed_transactions.py`
-- Kafka: `kafka_example/12_distributed_transactions.py`
-- Redis: `redis_example/12_distributed_transactions.py`
-
-### 13. Testing with Mock Services
-**Description:** Simulates communication with a mocked payment service for integration testing.  
-**Files:**
-- RabbitMQ: `rabbitmq_example/13_testing_with_mock_services.py`
-- Kafka: `kafka_example/13_testing_with_mock_services.py`
-- Redis: `redis_example/13_testing_with_mock_services.py`
-
-### 14. Security Testing
-**Description:** Validates security configurations for message brokers.  
-**Files:**
-- RabbitMQ: `rabbitmq_example/14_security_testing.py`
-- Kafka: `kafka_example/14_security_testing.py`
-- Redis: `redis_example/14_security_testing.py`
 
 ## How to Run the Examples
 
@@ -168,24 +133,10 @@ Redis is an in-memory data structure store that can be used as a database, cache
     pip install -r requirements.txt
     ```
 
-    or
-
-    ```bash
-    pip3 install -r requirements.txt
-    ```
-
 3. Run an example:
     ```bash
     python <example-file>.py
     ```
-
-    or
-
-    ```bash
-    python3 <example-file>.py
-    ```
-
-4. View the README file for detailed information about each example.
 
 ## Troubleshooting
 
@@ -196,7 +147,6 @@ Redis is an in-memory data structure store that can be used as a database, cache
     ```bash
     pip install pytest pika kafka-python redis testcontainers
     ```
-
 - **Insufficient Resources:** Allocate more CPU and memory to Docker if containers fail to start.
 
 ## Contributing
@@ -204,3 +154,4 @@ Redis is an in-memory data structure store that can be used as a database, cache
 Feel free to contribute by adding new examples, improving existing ones, or reporting issues.
 
 Happy Testing! 🏨✨
+
