@@ -5,15 +5,14 @@ This example shows how to use MongoDB transactions to ensure atomicity in multi-
 """
 
 import pytest
+import sys
+import os
 from pymongo.errors import OperationFailure
 
-# Fix Import Issue
-try:
-    from conftest import wait_for_primary
-except ImportError:
-    import sys
-    sys.path.append("..")  # Add parent directory to Python path
-    from conftest import wait_for_primary  # Import after fixing path
+# ✅ Fix Import Issue: Explicitly add the current directory to sys.path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from conftest import wait_for_primary  # Import the function correctly
 
 
 def test_transaction_commit(mongodb_client, transactions_collection):
