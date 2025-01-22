@@ -24,21 +24,23 @@ def mongodb_container():
         for attempt in range(max_attempts):
             try:
                 client.admin.command("ping")
-                print(f"[INFO] MongoDB is ready. Attempt {attempt + 1}/{max_attempts}")
+                print(f"[INFO] MongoDB is responsive. Attempt {attempt + 1}/{max_attempts}")
                 break
             except ServerSelectionTimeoutError:
                 print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/{max_attempts})...")
                 time.sleep(3)
-
-        # **Initiate Replica Set**
+        
+        # **Check if the Replica Set is already initialized**
         try:
+            status = client.admin.command("replSetGetStatus")
+            if status["myState"] == 1:  # PRIMARY node is already active
+                print("[INFO] MongoDB replica set is already PRIMARY.")
+        except OperationFailure:
             print("[INFO] Initiating MongoDB replica set...")
             client.admin.command("replSetInitiate")
-            time.sleep(5)  # Wait for the replica set to initialize
-        except OperationFailure as e:
-            print(f"[WARNING] Replica set already initialized or failed: {e}")
-
-        # **Ensure MongoDB PRIMARY node is elected**
+            time.sleep(5)  # Wait for replica set to initialize
+        
+        # **Ensure the PRIMARY node is active**
         for attempt in range(max_attempts):
             try:
                 status = client.admin.command("replSetGetStatus")
@@ -60,11 +62,12 @@ def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
     client = MongoClient(mongodb_container, retryWrites=False)
 
-    # **Wait for MongoDB to become responsive**
+    # **Ensure MongoDB is accessible**
     max_attempts = 20
     for attempt in range(max_attempts):
         try:
             client.admin.command("ping")
+            print(f"[INFO] MongoDB client connected. Attempt {attempt + 1}/{max_attempts}")
             break
         except ServerSelectionTimeoutError:
             print(f"[WARNING] Waiting for MongoDB client connection ({attempt + 1}/{max_attempts})...")
