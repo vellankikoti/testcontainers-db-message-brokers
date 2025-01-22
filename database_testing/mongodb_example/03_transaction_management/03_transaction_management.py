@@ -6,6 +6,7 @@ This example shows how to use MongoDB transactions to ensure atomicity in multi-
 
 import pytest
 from pymongo.errors import OperationFailure
+from conftest import wait_for_primary  # Import the function correctly
 
 
 def test_transaction_commit(mongodb_client, transactions_collection):
