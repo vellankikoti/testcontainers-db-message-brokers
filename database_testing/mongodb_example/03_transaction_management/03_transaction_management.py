@@ -5,18 +5,13 @@ This example shows how to use MongoDB transactions to ensure atomicity in multi-
 """
 
 import pytest
-import sys
-import os
 from pymongo.errors import OperationFailure
-
-# ✅ Fix Import Issue: Explicitly add the current directory to sys.path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from conftest import wait_for_primary  # Import the function correctly
 
 
 def test_transaction_commit(mongodb_client, transactions_collection):
     """Test a successful transaction commit."""
+    
+    # ✅ Do NOT import manually; pytest will automatically load conftest.py
     wait_for_primary(mongodb_client)  # Ensure PRIMARY node is active before starting
 
     db = mongodb_client.get_database("test_db")
@@ -36,6 +31,8 @@ def test_transaction_commit(mongodb_client, transactions_collection):
 
 def test_transaction_rollback(mongodb_client, transactions_collection):
     """Test a transaction rollback scenario."""
+
+    # ✅ Do NOT import manually; pytest will automatically load conftest.py
     wait_for_primary(mongodb_client)  # Ensure PRIMARY node is active before starting
 
     db = mongodb_client.get_database("test_db")
