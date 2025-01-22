@@ -11,13 +11,13 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with replica set enabled and wait for it to be ready."""
+    """Start a MongoDB container with a replica set and wait for it to be ready."""
     mongo = MongoDbContainer("mongo:6.0").with_command("--replSet rs0 --bind_ip_all")
     mongo.start()
 
     client = MongoClient(mongo.get_connection_url())
 
-    # Ensure MongoDB is ready
+    # Wait for MongoDB to be responsive
     for attempt in range(30):
         try:
             client.admin.command("ping")
@@ -34,11 +34,11 @@ def mongodb_container():
     except OperationFailure as e:
         print(f"[WARNING] Replica set already initiated: {e}")
 
-    # Ensure PRIMARY election completes
+    # Wait for PRIMARY node
     for attempt in range(30):
         try:
             status = client.admin.command("replSetGetStatus")
-            if status["myState"] == 1:  # PRIMARY node must be active
+            if status["myState"] == 1:  # PRIMARY node is elected
                 print("[INFO] MongoDB PRIMARY node is active.")
                 break
         except OperationFailure:
@@ -69,7 +69,7 @@ def transactions_collection(mongodb_client):
 
 def wait_for_primary(mongodb_client):
     """Wait for MongoDB to have an active PRIMARY node before transactions can be executed."""
-    print("[INFO] Waiting for MongoDB PRIMARY node to become available...")
+    print("[INFO] Ensuring MongoDB PRIMARY node is available...")
     for attempt in range(20):
         try:
             status = mongodb_client.admin.command("replSetGetStatus")
