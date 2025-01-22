@@ -1,5 +1,5 @@
 """
-conftest.py - Shared fixtures for MongoDB with transaction support.
+conftest.py - Shared fixtures for MongoDB with transactions enabled.
 """
 
 import pytest
@@ -19,7 +19,7 @@ def mongodb_container():
 
         print("[INFO] Waiting for MongoDB to start...")
 
-        # **Ensure MongoDB is reachable**
+        # Ensure MongoDB is accessible
         max_attempts = 30
         for attempt in range(max_attempts):
             try:
@@ -30,7 +30,7 @@ def mongodb_container():
                 print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/{max_attempts})...")
                 time.sleep(2)
 
-        # **Check if the Replica Set is already initialized**
+        # Check if the replica set is already initialized
         try:
             status = client.admin.command("replSetGetStatus")
             if status["myState"] == 1:  # PRIMARY node already active
@@ -40,7 +40,7 @@ def mongodb_container():
             client.admin.command("replSetInitiate")
             time.sleep(5)  # Wait for replica set to initialize
 
-        # **Ensure MongoDB has a PRIMARY node**
+        # Ensure MongoDB has a PRIMARY node
         for attempt in range(max_attempts):
             try:
                 status = client.admin.command("replSetGetStatus")
@@ -62,7 +62,7 @@ def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
     client = MongoClient(mongodb_container, retryWrites=False)
 
-    # **Ensure MongoDB is accessible**
+    # Ensure MongoDB is accessible
     max_attempts = 20
     for attempt in range(max_attempts):
         try:
