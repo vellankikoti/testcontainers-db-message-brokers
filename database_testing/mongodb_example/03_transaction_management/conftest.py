@@ -1,6 +1,5 @@
 import pytest
 import time
-import os
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
@@ -8,23 +7,23 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with a properly configured replica set and wait for it to be ready."""
+    """Start a MongoDB container with a properly configured replica set."""
     
-    # Force Testcontainers to always use the default MongoDB port 27017
+    # Start MongoDB with explicit replica set initialization
     mongo = MongoDbContainer("mongo:6.0").with_command(
         "--replSet rs0 --bind_ip_all --port 27017"
     )
     mongo.start()
 
-    # Get the correct MongoDB connection string
+    # Get MongoDB connection string with the correct port
     mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
     print(f"[INFO] MongoDB connection URL: {mongo_url}")
 
-    # Create a MongoDB client
     client = MongoClient(mongo_url)
 
     # Ensure MongoDB is up and running before proceeding
-    for attempt in range(60):  # Increased wait time
+    print("[INFO] Waiting for MongoDB to become responsive...")
+    for attempt in range(60):
         try:
             client.admin.command("ping")
             print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/60).")
@@ -35,7 +34,7 @@ def mongodb_container():
     else:
         raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
 
-    # Ensure replica set is initialized properly
+    # Force replica set initialization
     print("[INFO] Initiating MongoDB replica set...")
     for attempt in range(10):
         try:
@@ -56,15 +55,34 @@ def mongodb_container():
     for attempt in range(60):  # Increased timeout to 2 minutes
         try:
             status = client.admin.command("replSetGetStatus")
-            primary = any(member["stateStr"] == "PRIMARY" for member in status["members"])
-            if primary:
-                print("[INFO] MongoDB PRIMARY node is active.")
+            primary_node = None
+            for member in status["members"]:
+                if member["stateStr"] == "PRIMARY":
+                    primary_node = member
+                    break
+
+            if primary_node:
+                print(f"[INFO] MongoDB PRIMARY node is active: {primary_node['name']}")
                 break
         except OperationFailure:
             print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/60)...")
             time.sleep(2)
     else:
         raise RuntimeError("[ERROR] MongoDB PRIMARY node was not elected.")
+
+    # Ensure `readConcern: majority` is available
+    print("[INFO] Ensuring MongoDB read concern 'majority' is available...")
+    for attempt in range(30):
+        try:
+            result = client.admin.command({"replSetGetStatus": 1})
+            if result.get("ok") == 1:
+                print("[INFO] MongoDB replica set is fully operational.")
+                break
+        except OperationFailure as e:
+            print(f"[WARNING] ReadConcern majority not available, retrying ({attempt + 1}/30)...")
+            time.sleep(2)
+    else:
+        raise RuntimeError("[ERROR] MongoDB read concern 'majority' is not available.")
 
     yield mongo_url  # Yield the correct MongoDB URL
     mongo.stop()
