@@ -15,10 +15,13 @@ def test_transaction_commit(mongodb_client, transactions_collection):
     db = mongodb_client.get_database("test_db")
     session = mongodb_client.start_session()
 
-    with session.start_transaction():
-        transactions_collection.insert_one({"name": "Alice", "balance": 100}, session=session)
-        transactions_collection.insert_one({"name": "Bob", "balance": 50}, session=session)
-        session.commit_transaction()
+    try:
+        with session.start_transaction():
+            transactions_collection.insert_one({"name": "Alice", "balance": 100}, session=session)
+            transactions_collection.insert_one({"name": "Bob", "balance": 50}, session=session)
+            session.commit_transaction()
+    finally:
+        session.end_session()
 
     assert transactions_collection.count_documents({"name": "Alice"}) == 1
     assert transactions_collection.count_documents({"name": "Bob"}) == 1
@@ -31,10 +34,13 @@ def test_transaction_rollback(mongodb_client, transactions_collection):
     db = mongodb_client.get_database("test_db")
     session = mongodb_client.start_session()
 
-    with pytest.raises(OperationFailure):
-        with session.start_transaction():
-            transactions_collection.insert_one({"name": "Charlie", "balance": 200}, session=session)
-            raise OperationFailure("Simulating a failure")
-            session.commit_transaction()
+    try:
+        with pytest.raises(OperationFailure):
+            with session.start_transaction():
+                transactions_collection.insert_one({"name": "Charlie", "balance": 200}, session=session)
+                raise OperationFailure("Simulating a failure")
+                session.commit_transaction()
+    finally:
+        session.end_session()
 
     assert transactions_collection.count_documents({"name": "Charlie"}) == 0
