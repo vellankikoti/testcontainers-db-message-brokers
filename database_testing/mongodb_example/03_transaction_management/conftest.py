@@ -1,6 +1,5 @@
 import pytest
 import time
-import os
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
@@ -10,14 +9,10 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 def mongodb_container():
     """Start a MongoDB container with a properly configured replica set."""
     
-    # Define the absolute path to the mongo-init.js script
-    init_script_path = os.path.abspath("mongo-init.js")
-
-    # Start MongoDB with replica set and init script
+    # Start MongoDB with explicit replica set configuration
     mongo = MongoDbContainer("mongo:6.0").with_command(
         "--replSet rs0 --bind_ip_all --port 27017"
-    ).with_volume_mapping(init_script_path, "/docker-entrypoint-initdb.d/mongo-init.js")
-
+    )
     mongo.start()
 
     # Get MongoDB connection URL
@@ -26,9 +21,13 @@ def mongodb_container():
 
     client = MongoClient(mongo_url)
 
+    # Delay to allow MongoDB to initialize
+    print("[INFO] Waiting 10 seconds for MongoDB to initialize...")
+    time.sleep(10)
+
     # Wait for MongoDB to become responsive
-    print("[INFO] Waiting for MongoDB to become responsive...")
-    for attempt in range(60):  # Wait up to 2 minutes
+    print("[INFO] Checking MongoDB status...")
+    for attempt in range(60):
         try:
             client.admin.command("ping")
             print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/60).")
@@ -39,16 +38,26 @@ def mongodb_container():
     else:
         raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
 
+    # Force replica set initialization
+    print("[INFO] Initiating MongoDB replica set...")
+    try:
+        client.admin.command("replSetInitiate")
+        print("[INFO] MongoDB replica set initiated successfully.")
+    except OperationFailure as e:
+        if "already initiated" in str(e):
+            print("[INFO] MongoDB replica set already initiated.")
+        else:
+            raise RuntimeError(f"[ERROR] MongoDB replica set initiation failed: {e}")
+
     # Wait for PRIMARY node election
     print("[INFO] Waiting for MongoDB PRIMARY node election...")
-    for attempt in range(60):  # Increased timeout to 2 minutes
+    for attempt in range(60):
         try:
             status = client.admin.command("replSetGetStatus")
-            primary_node = None
-            for member in status["members"]:
-                if member["stateStr"] == "PRIMARY":
-                    primary_node = member
-                    break
+            primary_node = next(
+                (member for member in status["members"] if member["stateStr"] == "PRIMARY"),
+                None
+            )
 
             if primary_node:
                 print(f"[INFO] MongoDB PRIMARY node is active: {primary_node['name']}")
@@ -61,37 +70,3 @@ def mongodb_container():
 
     yield mongo_url  # Yield the correct MongoDB URL
     mongo.stop()
-
-
-@pytest.fixture(scope="module")
-def mongodb_client(mongodb_container):
-    """Create a MongoDB client connected to the Testcontainers MongoDB instance."""
-    client = MongoClient(mongodb_container)
-    yield client
-    client.close()
-
-
-@pytest.fixture(scope="module")
-def transactions_collection(mongodb_client):
-    """Set up the 'transactions' collection in the MongoDB database."""
-    db = mongodb_client.get_database("test_db")
-    collection = db.get_collection("transactions")
-    collection.delete_many({})  # Ensure collection is empty before tests
-    yield collection
-    collection.delete_many({})  # Clean up after tests
-
-
-def wait_for_primary(mongodb_client):
-    """Ensure MongoDB has an active PRIMARY node before running transactions."""
-    print("[INFO] Ensuring MongoDB PRIMARY node is available...")
-    for attempt in range(30):
-        try:
-            status = mongodb_client.admin.command("replSetGetStatus")
-            if any(member["stateStr"] == "PRIMARY" for member in status["members"]):
-                print("[INFO] MongoDB PRIMARY node is active.")
-                return
-        except OperationFailure:
-            print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/30)...")
-            time.sleep(2)
-
-    raise RuntimeError("[ERROR] MongoDB PRIMARY node did not become available.")
