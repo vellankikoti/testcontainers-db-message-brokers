@@ -25,33 +25,27 @@ def wait_for_primary(mongodb_client):
     raise RuntimeError("MongoDB PRIMARY node did not become available.")
 
 
-def test_transaction_commit(mongodb_client, mongo_session):
+def test_transaction_commit(mongodb_client, mongo_session, transactions_collection):
     """Test a successful transaction commit."""
-    db = mongodb_client.get_database("test_db")
-    collection = db.get_collection("transactions")
-
     wait_for_primary(mongodb_client)
 
     with mongo_session.start_transaction():
-        collection.insert_one({"name": "Alice", "balance": 100}, session=mongo_session)
-        collection.insert_one({"name": "Bob", "balance": 50}, session=mongo_session)
+        transactions_collection.insert_one({"name": "Alice", "balance": 100}, session=mongo_session)
+        transactions_collection.insert_one({"name": "Bob", "balance": 50}, session=mongo_session)
         mongo_session.commit_transaction()
 
-    assert collection.count_documents({"name": "Alice"}) == 1
-    assert collection.count_documents({"name": "Bob"}) == 1
+    assert transactions_collection.count_documents({"name": "Alice"}) == 1
+    assert transactions_collection.count_documents({"name": "Bob"}) == 1
 
 
-def test_transaction_rollback(mongodb_client, mongo_session):
+def test_transaction_rollback(mongodb_client, mongo_session, transactions_collection):
     """Test a transaction rollback scenario."""
-    db = mongodb_client.get_database("test_db")
-    collection = db.get_collection("transactions")
-
     wait_for_primary(mongodb_client)
 
     with pytest.raises(OperationFailure):
         with mongo_session.start_transaction():
-            collection.insert_one({"name": "Charlie", "balance": 200}, session=mongo_session)
+            transactions_collection.insert_one({"name": "Charlie", "balance": 200}, session=mongo_session)
             raise OperationFailure("Simulating a failure")
             mongo_session.commit_transaction()
 
-    assert collection.count_documents({"name": "Charlie"}) == 0
+    assert transactions_collection.count_documents({"name": "Charlie"}) == 0
