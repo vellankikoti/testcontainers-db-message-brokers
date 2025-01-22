@@ -9,21 +9,21 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 def mongodb_container():
     """Start a MongoDB container with a properly configured replica set."""
     
-    # Start MongoDB with explicit replica set initialization
+    # Start MongoDB with explicit replica set configuration
     mongo = MongoDbContainer("mongo:6.0").with_command(
         "--replSet rs0 --bind_ip_all --port 27017"
     )
     mongo.start()
 
-    # Get MongoDB connection string with the correct port
+    # Get the correct MongoDB connection string
     mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
     print(f"[INFO] MongoDB connection URL: {mongo_url}")
 
     client = MongoClient(mongo_url)
 
-    # Ensure MongoDB is up and running before proceeding
+    # Wait for MongoDB to become responsive
     print("[INFO] Waiting for MongoDB to become responsive...")
-    for attempt in range(60):
+    for attempt in range(60):  # Wait up to 2 minutes
         try:
             client.admin.command("ping")
             print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/60).")
@@ -35,20 +35,28 @@ def mongodb_container():
         raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
 
     # Force replica set initialization
-    print("[INFO] Initiating MongoDB replica set...")
-    for attempt in range(10):
-        try:
-            client.admin.command("replSetInitiate")
-            print("[INFO] MongoDB replica set initiated successfully.")
-            break
-        except OperationFailure as e:
-            if "already initiated" in str(e):
-                print("[INFO] MongoDB replica set already initiated.")
+    print("[INFO] Checking replica set status...")
+    try:
+        status = client.admin.command("replSetGetStatus")
+        primary_exists = any(member["stateStr"] == "PRIMARY" for member in status["members"])
+    except OperationFailure:
+        primary_exists = False
+
+    if not primary_exists:
+        print("[INFO] Initiating MongoDB replica set...")
+        for attempt in range(10):
+            try:
+                client.admin.command("replSetInitiate")
+                print("[INFO] MongoDB replica set initiated successfully.")
                 break
-            print(f"[WARNING] Failed to initiate replica set, retrying ({attempt + 1}/10)...")
-            time.sleep(2)
-    else:
-        raise RuntimeError("[ERROR] MongoDB replica set did not initialize.")
+            except OperationFailure as e:
+                if "already initiated" in str(e):
+                    print("[INFO] MongoDB replica set already initiated.")
+                    break
+                print(f"[WARNING] Failed to initiate replica set, retrying ({attempt + 1}/10)...")
+                time.sleep(2)
+        else:
+            raise RuntimeError("[ERROR] MongoDB replica set did not initialize.")
 
     # Wait for PRIMARY node election
     print("[INFO] Waiting for MongoDB PRIMARY node election...")
