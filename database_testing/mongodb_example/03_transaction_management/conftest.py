@@ -1,7 +1,3 @@
-"""
-conftest.py - Shared fixtures for MongoDB example
-"""
-
 import pytest
 import time
 from testcontainers.mongodb import MongoDbContainer
@@ -26,24 +22,37 @@ def mongodb_container():
         except ServerSelectionTimeoutError:
             print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/30)...")
             time.sleep(2)
+    else:
+        raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
 
-    # Initialize replica set
-    try:
-        client.admin.command("replSetInitiate")
-        print("[INFO] MongoDB replica set initiated.")
-    except OperationFailure as e:
-        print(f"[WARNING] Replica set already initiated: {e}")
+    # Initialize replica set (retry if necessary)
+    for attempt in range(10):
+        try:
+            client.admin.command("replSetInitiate")
+            print("[INFO] MongoDB replica set initiated.")
+            break
+        except OperationFailure as e:
+            if "already initiated" in str(e):
+                print("[INFO] MongoDB replica set already initiated.")
+                break
+            print(f"[WARNING] Failed to initiate replica set, retrying ({attempt + 1}/10)...")
+            time.sleep(2)
+    else:
+        raise RuntimeError("[ERROR] MongoDB replica set did not initialize.")
 
-    # Wait for PRIMARY node
+    # Wait for PRIMARY node election
     for attempt in range(30):
         try:
             status = client.admin.command("replSetGetStatus")
-            if status["myState"] == 1:  # PRIMARY node is elected
+            primary = any(member["stateStr"] == "PRIMARY" for member in status["members"])
+            if primary:
                 print("[INFO] MongoDB PRIMARY node is active.")
                 break
         except OperationFailure:
             print(f"[WARNING] Waiting for MongoDB PRIMARY election ({attempt + 1}/30)...")
             time.sleep(2)
+    else:
+        raise RuntimeError("[ERROR] MongoDB PRIMARY node was not elected.")
 
     yield mongo.get_connection_url()
     mongo.stop()
@@ -73,11 +82,11 @@ def wait_for_primary(mongodb_client):
     for attempt in range(20):
         try:
             status = mongodb_client.admin.command("replSetGetStatus")
-            if status["myState"] == 1:  # PRIMARY node must be active
+            if any(member["stateStr"] == "PRIMARY" for member in status["members"]):
                 print("[INFO] MongoDB PRIMARY node is active.")
                 return
         except OperationFailure:
             print(f"[WARNING] Waiting for MongoDB PRIMARY election ({attempt + 1}/20)...")
             time.sleep(2)
 
-    raise RuntimeError("MongoDB PRIMARY node did not become available.")
+    raise RuntimeError("[ERROR] MongoDB PRIMARY node did not become available.")
