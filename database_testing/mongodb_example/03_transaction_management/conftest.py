@@ -21,25 +21,42 @@ def mongodb_container():
 
     client = MongoClient(mongo_url)
 
-    # Delay to allow MongoDB to initialize
-    print("[INFO] Waiting 10 seconds for MongoDB to initialize...")
-    time.sleep(10)
+    # Ensure MongoDB starts properly
+    wait_for_mongo_ready(client)
 
-    # Wait for MongoDB to become responsive
-    print("[INFO] Checking MongoDB status...")
+    # Ensure MongoDB Replica Set is initialized
+    initialize_replica_set(client)
+
+    yield mongo_url  # Yield the correct MongoDB URL
+    mongo.stop()
+
+
+@pytest.fixture(scope="module")
+def mongodb_client(mongodb_container):
+    """Return a MongoDB client connected to the Testcontainers MongoDB instance."""
+    client = MongoClient(mongodb_container)
+    yield client
+    client.close()
+
+
+def wait_for_mongo_ready(client):
+    """Wait until MongoDB is ready to accept connections."""
+    print("[INFO] Waiting for MongoDB to become responsive...")
     for attempt in range(60):
         try:
             client.admin.command("ping")
             print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/60).")
-            break
+            return
         except ServerSelectionTimeoutError:
             print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/60)...")
             time.sleep(2)
-    else:
-        raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
+    raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
 
-    # Force replica set initialization
+
+def initialize_replica_set(client):
+    """Ensure MongoDB replica set is initialized and PRIMARY node is elected."""
     print("[INFO] Initiating MongoDB replica set...")
+    
     try:
         client.admin.command("replSetInitiate")
         print("[INFO] MongoDB replica set initiated successfully.")
@@ -61,12 +78,9 @@ def mongodb_container():
 
             if primary_node:
                 print(f"[INFO] MongoDB PRIMARY node is active: {primary_node['name']}")
-                break
+                return
         except OperationFailure:
             print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/60)...")
             time.sleep(2)
-    else:
-        raise RuntimeError("[ERROR] MongoDB PRIMARY node was not elected.")
 
-    yield mongo_url  # Yield the correct MongoDB URL
-    mongo.stop()
+    raise RuntimeError("[ERROR] MongoDB PRIMARY node was not elected.")
