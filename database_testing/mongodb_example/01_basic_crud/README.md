@@ -76,6 +76,7 @@ python3 -m pytest 01_basic_crud.py -v -s
 
 When you run the test, you should see output similar to the following:
 
+![image](https://github.com/user-attachments/assets/b3ded991-a91a-4952-8589-295b41f92436)
 
 
 ---
