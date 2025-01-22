@@ -1,5 +1,6 @@
 import pytest
 import time
+import os
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
@@ -9,25 +10,25 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 def mongodb_container():
     """Start a MongoDB container with a properly configured replica set."""
     
-    # Start MongoDB with explicit replica set configuration
-    mongo = MongoDbContainer("mongo:6.0").with_command(
-        "--replSet rs0 --bind_ip_all --port 27017"
+    # ✅ Force Testcontainers to use a stable port for MongoDB (27018)
+    mongo = MongoDbContainer("mongo:6.0").with_exposed_ports(27018).with_command(
+        "--replSet rs0 --bind_ip_all --port 27018"
     )
     mongo.start()
 
-    # Get MongoDB connection URL
-    mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
+    # ✅ Get the fixed MongoDB connection URL
+    mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27018)}"
     print(f"[INFO] MongoDB connection URL: {mongo_url}")
 
     client = MongoClient(mongo_url)
 
-    # Ensure MongoDB starts properly
+    # ✅ Ensure MongoDB starts properly before proceeding
     wait_for_mongo_ready(client)
 
-    # Ensure MongoDB Replica Set is initialized
+    # ✅ Ensure MongoDB Replica Set is initialized
     initialize_replica_set(client)
 
-    yield mongo_url  # Yield the correct MongoDB URL
+    yield mongo_url  # ✅ Yield the correct MongoDB URL to test functions
     mongo.stop()
 
 
@@ -40,9 +41,9 @@ def mongodb_client(mongodb_container):
 
 
 def wait_for_mongo_ready(client):
-    """Wait until MongoDB is ready to accept connections."""
+    """✅ Ensure MongoDB is ready before running tests."""
     print("[INFO] Waiting for MongoDB to become responsive...")
-    for attempt in range(60):
+    for attempt in range(60):  # Maximum wait time: 120 seconds
         try:
             client.admin.command("ping")
             print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/60).")
@@ -54,7 +55,7 @@ def wait_for_mongo_ready(client):
 
 
 def initialize_replica_set(client):
-    """Ensure MongoDB replica set is initialized and PRIMARY node is elected."""
+    """✅ Ensure MongoDB replica set is properly initialized."""
     print("[INFO] Initiating MongoDB replica set...")
     
     try:
@@ -66,9 +67,9 @@ def initialize_replica_set(client):
         else:
             raise RuntimeError(f"[ERROR] MongoDB replica set initiation failed: {e}")
 
-    # Wait for PRIMARY node election
+    # ✅ Wait for MongoDB PRIMARY node election
     print("[INFO] Waiting for MongoDB PRIMARY node election...")
-    for attempt in range(60):
+    for attempt in range(60):  # Maximum wait time: 120 seconds
         try:
             status = client.admin.command("replSetGetStatus")
             primary_node = next(
