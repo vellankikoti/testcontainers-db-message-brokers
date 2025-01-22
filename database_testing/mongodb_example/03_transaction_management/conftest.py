@@ -3,8 +3,10 @@ conftest.py - Shared fixtures for MongoDB example
 """
 
 import pytest
+import time
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
 
 
 @pytest.fixture(scope="module")
@@ -12,10 +14,25 @@ def mongodb_container():
     """Start a MongoDB container with replica set enabled to support transactions."""
     with MongoDbContainer("mongo:6.0").with_command("--replSet rs0") as mongo:
         mongo.start()
+
         client = MongoClient(mongo.get_connection_url())
 
-        # Initiate the replica set (needed for transactions)
-        client.admin.command("replSetInitiate")
+        # Wait for MongoDB to become available
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            try:
+                client.admin.command("ping")
+                break
+            except ServerSelectionTimeoutError:
+                if attempt == max_attempts - 1:
+                    raise
+                time.sleep(3)  # Wait before retrying
+        
+        # Initiate the replica set
+        try:
+            client.admin.command("replSetInitiate")
+        except Exception as e:
+            print(f"Replica set initiation failed: {e}")
 
         yield mongo.get_connection_url()
 
@@ -24,6 +41,18 @@ def mongodb_container():
 def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
     client = MongoClient(mongodb_container)
+
+    # Ensure the client can connect before yielding
+    max_attempts = 10
+    for attempt in range(max_attempts):
+        try:
+            client.admin.command("ping")
+            break
+        except ServerSelectionTimeoutError:
+            if attempt == max_attempts - 1:
+                raise
+            time.sleep(3)  # Wait before retrying
+
     yield client
     client.close()
 
