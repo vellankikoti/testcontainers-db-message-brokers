@@ -6,7 +6,14 @@ This example shows how to use MongoDB transactions to ensure atomicity in multi-
 
 import pytest
 from pymongo.errors import OperationFailure
-from conftest import wait_for_primary  # Import the function correctly
+
+# Fix Import Issue
+try:
+    from conftest import wait_for_primary
+except ImportError:
+    import sys
+    sys.path.append("..")  # Add parent directory to Python path
+    from conftest import wait_for_primary  # Import after fixing path
 
 
 def test_transaction_commit(mongodb_client, transactions_collection):
