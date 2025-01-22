@@ -1,5 +1,5 @@
 """
-conftest.py - Shared fixtures for MongoDB with replica set support.
+conftest.py - Shared fixtures for MongoDB with transaction support.
 """
 
 import pytest
@@ -11,14 +11,16 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with replica set and ensure readiness."""
+    """Start a MongoDB container with a properly initialized replica set."""
     with MongoDbContainer("mongo:6.0").with_command("--replSet rs0 --bind_ip_all") as mongo:
         mongo.start()
         connection_url = mongo.get_connection_url()
         client = MongoClient(connection_url)
 
+        print("[INFO] Waiting for MongoDB to start...")
+
         # Ensure MongoDB is fully started before proceeding
-        max_attempts = 15
+        max_attempts = 20
         for attempt in range(max_attempts):
             try:
                 client.admin.command("ping")
@@ -32,19 +34,19 @@ def mongodb_container():
         try:
             print("[INFO] Initiating MongoDB replica set...")
             client.admin.command("replSetInitiate")
-            time.sleep(5)  # Wait for replica set to initialize
+            time.sleep(5)  # Wait for the replica set to initialize
         except OperationFailure as e:
             print(f"[WARNING] Replica set already initialized or failed: {e}")
 
-        # Verify replica set is ready
+        # Wait for primary election
         for attempt in range(max_attempts):
             try:
                 status = client.admin.command("replSetGetStatus")
-                if status["ok"]:
-                    print("[INFO] MongoDB replica set initialized successfully.")
+                if status["myState"] == 1:  # myState 1 = PRIMARY
+                    print("[INFO] MongoDB replica set is fully initialized with a primary node.")
                     break
             except OperationFailure:
-                print(f"[WARNING] Waiting for MongoDB replica set to be ready ({attempt + 1}/{max_attempts})...")
+                print(f"[WARNING] Waiting for MongoDB primary election ({attempt + 1}/{max_attempts})...")
                 time.sleep(3)
 
             if attempt == max_attempts - 1:
@@ -56,10 +58,10 @@ def mongodb_container():
 @pytest.fixture(scope="module")
 def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
-    client = MongoClient(mongodb_container)
+    client = MongoClient(mongodb_container, retryWrites=False)
 
     # Ensure MongoDB is responsive before proceeding
-    max_attempts = 15
+    max_attempts = 20
     for attempt in range(max_attempts):
         try:
             client.admin.command("ping")
