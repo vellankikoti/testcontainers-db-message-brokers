@@ -1,5 +1,5 @@
 """
-conftest.py - Shared fixtures for MongoDB example
+conftest.py - Shared fixtures for MongoDB with replica set support.
 """
 
 import pytest
@@ -11,7 +11,7 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with a replica set and ensure it's ready."""
+    """Start a MongoDB container with replica set and ensure readiness."""
     with MongoDbContainer("mongo:6.0").with_command("--replSet rs0 --bind_ip_all") as mongo:
         mongo.start()
         connection_url = mongo.get_connection_url()
@@ -26,22 +26,22 @@ def mongodb_container():
                 break
             except ServerSelectionTimeoutError:
                 print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/{max_attempts})...")
-                time.sleep(5)
+                time.sleep(3)
 
-        # Initiate replica set
+        # Initiate replica set (Only needed for transactions)
         try:
             print("[INFO] Initiating MongoDB replica set...")
             client.admin.command("replSetInitiate")
-            time.sleep(5)  # Give time for the replica set to initialize
+            time.sleep(5)  # Wait for replica set to initialize
         except OperationFailure as e:
-            print(f"[ERROR] Replica set initiation failed: {e}")
+            print(f"[WARNING] Replica set already initialized or failed: {e}")
 
-        # Verify the replica set is initialized
+        # Verify replica set is ready
         for attempt in range(max_attempts):
             try:
                 status = client.admin.command("replSetGetStatus")
                 if status["ok"]:
-                    print("[INFO] MongoDB replica set is initialized successfully.")
+                    print("[INFO] MongoDB replica set initialized successfully.")
                     break
             except OperationFailure:
                 print(f"[WARNING] Waiting for MongoDB replica set to be ready ({attempt + 1}/{max_attempts})...")
@@ -67,7 +67,7 @@ def mongodb_client(mongodb_container):
         except ServerSelectionTimeoutError:
             print(f"[WARNING] Waiting for MongoDB client connection ({attempt + 1}/{max_attempts})...")
             time.sleep(3)
-    
+
     yield client
     client.close()
 
