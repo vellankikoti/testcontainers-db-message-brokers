@@ -8,32 +8,34 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with a properly configured replica set."""
+    """Start a MongoDB container with a properly configured replica set and wait for it to be ready."""
+    
+    # Force Testcontainers to always use the default MongoDB port 27017
     mongo = MongoDbContainer("mongo:6.0").with_command(
         "--replSet rs0 --bind_ip_all --port 27017"
     )
     mongo.start()
 
-    # Get connection details
-    mongo_url = mongo.get_connection_url()
+    # Get the correct MongoDB connection string
+    mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
     print(f"[INFO] MongoDB connection URL: {mongo_url}")
 
     # Create a MongoDB client
     client = MongoClient(mongo_url)
 
-    # Wait for MongoDB to be responsive
-    for attempt in range(30):
+    # Ensure MongoDB is up and running before proceeding
+    for attempt in range(60):  # Increased wait time
         try:
             client.admin.command("ping")
-            print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/30).")
+            print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/60).")
             break
         except ServerSelectionTimeoutError:
-            print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/30)...")
+            print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/60)...")
             time.sleep(2)
     else:
         raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
 
-    # Initialize replica set (Retry if necessary)
+    # Ensure replica set is initialized properly
     print("[INFO] Initiating MongoDB replica set...")
     for attempt in range(10):
         try:
@@ -51,7 +53,7 @@ def mongodb_container():
 
     # Wait for PRIMARY node election
     print("[INFO] Waiting for MongoDB PRIMARY node election...")
-    for attempt in range(30):
+    for attempt in range(60):  # Increased timeout to 2 minutes
         try:
             status = client.admin.command("replSetGetStatus")
             primary = any(member["stateStr"] == "PRIMARY" for member in status["members"])
@@ -59,7 +61,7 @@ def mongodb_container():
                 print("[INFO] MongoDB PRIMARY node is active.")
                 break
         except OperationFailure:
-            print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/30)...")
+            print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/60)...")
             time.sleep(2)
     else:
         raise RuntimeError("[ERROR] MongoDB PRIMARY node was not elected.")
@@ -89,14 +91,14 @@ def transactions_collection(mongodb_client):
 def wait_for_primary(mongodb_client):
     """Ensure MongoDB has an active PRIMARY node before running transactions."""
     print("[INFO] Ensuring MongoDB PRIMARY node is available...")
-    for attempt in range(20):
+    for attempt in range(30):
         try:
             status = mongodb_client.admin.command("replSetGetStatus")
             if any(member["stateStr"] == "PRIMARY" for member in status["members"]):
                 print("[INFO] MongoDB PRIMARY node is active.")
                 return
         except OperationFailure:
-            print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/20)...")
+            print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/30)...")
             time.sleep(2)
 
     raise RuntimeError("[ERROR] MongoDB PRIMARY node did not become available.")
