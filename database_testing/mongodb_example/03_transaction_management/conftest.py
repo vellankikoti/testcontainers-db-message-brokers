@@ -20,7 +20,7 @@ def mongodb_container():
         print("[INFO] Waiting for MongoDB to start...")
 
         # Ensure MongoDB is fully started before proceeding
-        max_attempts = 20
+        max_attempts = 30
         for attempt in range(max_attempts):
             try:
                 client.admin.command("ping")
@@ -30,7 +30,7 @@ def mongodb_container():
                 print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/{max_attempts})...")
                 time.sleep(3)
 
-        # Initiate replica set (Only needed for transactions)
+        # **Initiate Replica Set**
         try:
             print("[INFO] Initiating MongoDB replica set...")
             client.admin.command("replSetInitiate")
@@ -38,15 +38,15 @@ def mongodb_container():
         except OperationFailure as e:
             print(f"[WARNING] Replica set already initialized or failed: {e}")
 
-        # Wait for primary election
+        # **Ensure MongoDB PRIMARY node is elected**
         for attempt in range(max_attempts):
             try:
                 status = client.admin.command("replSetGetStatus")
-                if status["myState"] == 1:  # myState 1 = PRIMARY
-                    print("[INFO] MongoDB replica set is fully initialized with a primary node.")
+                if status["myState"] == 1:  # 1 = PRIMARY node
+                    print("[INFO] MongoDB replica set is fully initialized with a PRIMARY node.")
                     break
             except OperationFailure:
-                print(f"[WARNING] Waiting for MongoDB primary election ({attempt + 1}/{max_attempts})...")
+                print(f"[WARNING] Waiting for MongoDB PRIMARY election ({attempt + 1}/{max_attempts})...")
                 time.sleep(3)
 
             if attempt == max_attempts - 1:
@@ -60,7 +60,7 @@ def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
     client = MongoClient(mongodb_container, retryWrites=False)
 
-    # Ensure MongoDB is responsive before proceeding
+    # **Wait for MongoDB to become responsive**
     max_attempts = 20
     for attempt in range(max_attempts):
         try:
@@ -76,9 +76,9 @@ def mongodb_client(mongodb_container):
 
 @pytest.fixture(scope="module")
 def test_collection(mongodb_client):
-    """Set up the 'test_data' collection in the MongoDB database."""
+    """Set up the 'transactions' collection in the MongoDB database."""
     db = mongodb_client.get_database("test_db")
-    collection = db.get_collection("test_data")
+    collection = db.get_collection("transactions")
 
     # Ensure the collection is empty before starting tests
     collection.delete_many({})
