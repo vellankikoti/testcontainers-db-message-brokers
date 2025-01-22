@@ -13,6 +13,16 @@ def test_transaction_commit(mongodb_client, mongo_session):
     db = mongodb_client.get_database("test_db")
     collection = db.get_collection("transactions")
 
+    # Ensure MongoDB has a PRIMARY node before starting the session
+    for attempt in range(20):
+        try:
+            status = mongodb_client.admin.command("replSetGetStatus")
+            if status["myState"] == 1:  # PRIMARY node must be active
+                break
+        except OperationFailure:
+            print(f"[WARNING] Waiting for MongoDB PRIMARY election ({attempt + 1}/20)...")
+            time.sleep(3)
+
     with mongo_session.start_transaction():
         collection.insert_one({"name": "Alice", "balance": 100}, session=mongo_session)
         collection.insert_one({"name": "Bob", "balance": 50}, session=mongo_session)
