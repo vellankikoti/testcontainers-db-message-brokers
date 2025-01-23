@@ -1,13 +1,29 @@
 import pytest
 import time
+import os
+import docker
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 
 
+def stop_existing_mongo_containers():
+    """Stop and remove any existing MongoDB containers before starting new ones."""
+    client = docker.from_env()
+    containers = client.containers.list(all=True, filters={"ancestor": "my-mongo-replica"})
+    
+    for container in containers:
+        print(f"[INFO] 🛑 Stopping existing MongoDB container {container.id}...")
+        container.stop()
+        container.remove()
+
+
 @pytest.fixture(scope="module")
 def mongodb_client():
     """Start a MongoDB container with a properly configured replica set."""
+
+    # ✅ Ensure no MongoDB container is running before starting a new one
+    stop_existing_mongo_containers()
 
     print("[INFO] 🚀 Starting MongoDB container...")
 
