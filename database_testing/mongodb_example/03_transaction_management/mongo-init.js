@@ -5,16 +5,28 @@ const cfg = {
     members: [{ _id: 0, host: "localhost:27017" }]
 };
 
-try {
-    let status = rs.status();
-    if (status.ok === 1) {
-        print("✅ Replica set already initialized.");
-    } else {
-        throw new Error("Replica set not initialized, proceeding...");
+let rsInitiated = false;
+
+while (!rsInitiated) {
+    try {
+        let status = rs.status();
+        if (status.ok === 1) {
+            print("✅ Replica set already initialized.");
+            rsInitiated = true;
+        } else {
+            throw new Error("Replica set not initialized, proceeding...");
+        }
+    } catch (e) {
+        print("⚠️ Replica set not initialized. Initializing now...");
+        try {
+            rs.initiate(cfg);
+            rsInitiated = true;
+            print("🎉 Replica set successfully initialized!");
+        } catch (err) {
+            print("⏳ Waiting for MongoDB to be ready before initializing again...");
+            sleep(2000);
+        }
     }
-} catch (e) {
-    print("⚠️ Initializing replica set...");
-    rs.initiate(cfg);
 }
 
 // ✅ Wait until MongoDB elects a PRIMARY node
@@ -32,3 +44,5 @@ while (!isReady) {
         sleep(2000);
     }
 }
+
+print("✅ MongoDB Replica Set is fully initialized and PRIMARY is elected!");
