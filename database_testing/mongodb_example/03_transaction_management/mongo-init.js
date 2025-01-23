@@ -6,17 +6,24 @@ const cfg = {
 };
 
 try {
-    rs.initiate(cfg);
+    let status = rs.status();
+    if (status.ok === 1) {
+        print("✅ Replica set already initialized.");
+    } else {
+        throw new Error("Replica set not initialized, proceeding...");
+    }
 } catch (e) {
-    print("⚠️ Replica set already initialized, skipping...");
+    print("⚠️ Initializing replica set...");
+    rs.initiate(cfg);
 }
 
+// ✅ Wait for PRIMARY election
 let isReady = false;
 while (!isReady) {
     try {
         let status = rs.status();
         if (status.ok === 1) {
-            print("✅ MongoDB PRIMARY node is ready!");
+            print("🎉 MongoDB PRIMARY node is ready!");
             isReady = true;
         }
     } catch (e) {
