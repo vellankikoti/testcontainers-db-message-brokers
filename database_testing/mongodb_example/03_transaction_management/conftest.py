@@ -1,6 +1,5 @@
 import pytest
 import time
-import os
 import docker
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
@@ -11,11 +10,22 @@ def stop_existing_mongo_containers():
     """Stop and remove any existing MongoDB containers before starting new ones."""
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"ancestor": "my-mongo-replica"})
-    
+
     for container in containers:
         print(f"[INFO] 🛑 Stopping existing MongoDB container {container.id}...")
-        container.stop()
-        container.remove()
+        try:
+            container.stop()
+            container.wait()  # ✅ Wait for the container to fully stop
+            container.remove()
+            print(f"[INFO] ✅ Container {container.id} stopped and removed.")
+        except docker.errors.APIError as e:
+            print(f"[WARNING] ⚠️ Error while stopping/removing {container.id}: {e}")
+            time.sleep(2)  # Wait and retry
+            try:
+                container.remove(force=True)
+                print(f"[INFO] ✅ Container {container.id} force removed.")
+            except Exception as err:
+                print(f"[ERROR] ❌ Could not remove {container.id}: {err}")
 
 
 @pytest.fixture(scope="module")
