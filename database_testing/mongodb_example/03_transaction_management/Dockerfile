@@ -1,0 +1,7 @@
+FROM mongo:6.0
+
+# Copy the MongoDB initialization script
+COPY mongo-init.js /docker-entrypoint-initdb.d/mongo-init.js
+
+# ✅ Ensure MongoDB starts with replication enabled
+CMD ["mongod", "--replSet", "rs0", "--bind_ip_all"]
