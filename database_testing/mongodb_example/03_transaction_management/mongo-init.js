@@ -1,4 +1,4 @@
-print("🌟 Initializing MongoDB Replica Set...");
+print("🌟 Checking and Initializing MongoDB Replica Set...");
 
 const cfg = {
     _id: "rs0",
@@ -18,16 +18,17 @@ try {
 }
 
 // ✅ Wait for PRIMARY election
+print("⏳ Waiting for MongoDB PRIMARY node election...");
 let isReady = false;
 while (!isReady) {
     try {
         let status = rs.status();
-        if (status.ok === 1) {
+        if (status.ok === 1 && status.myState === 1) {
             print("🎉 MongoDB PRIMARY node is ready!");
             isReady = true;
         }
     } catch (e) {
-        print("⏳ Waiting for PRIMARY node...");
+        print("⏳ Still waiting for PRIMARY node...");
         sleep(1000);
     }
 }
