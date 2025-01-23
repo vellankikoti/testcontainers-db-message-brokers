@@ -8,7 +8,7 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 @pytest.fixture(scope="module")
 def mongodb_container():
     """Start a MongoDB container with a properly configured replica set."""
-    
+
     # ✅ Start MongoDB with explicit replica set configuration
     mongo = MongoDbContainer("mongo:6.0").with_command(
         "--replSet rs0 --bind_ip_all --port 27017"
@@ -42,13 +42,13 @@ def mongodb_client(mongodb_container):
 def wait_for_mongo_ready(client):
     """✅ Ensure MongoDB is ready before running tests."""
     print("[INFO] Waiting for MongoDB to become responsive...")
-    for attempt in range(60):  # Maximum wait time: 120 seconds
+    for attempt in range(30):  # Maximum wait time: 60 seconds
         try:
             client.admin.command("ping")
-            print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/60).")
+            print(f"[INFO] MongoDB is responsive (Attempt {attempt + 1}/30).")
             return
         except ServerSelectionTimeoutError:
-            print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/60)...")
+            print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/30)...")
             time.sleep(2)
     raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
 
@@ -82,7 +82,7 @@ def initialize_replica_set(client):
 
     # ✅ Wait for MongoDB PRIMARY node election
     print("[INFO] Waiting for MongoDB PRIMARY node election...")
-    for attempt in range(60):  # Maximum wait time: 120 seconds
+    for attempt in range(30):  # Maximum wait time: 60 seconds
         try:
             status = client.admin.command("replSetGetStatus")
             primary_node = next(
@@ -94,7 +94,7 @@ def initialize_replica_set(client):
                 print(f"[INFO] MongoDB PRIMARY node is active: {primary_node['name']}")
                 return
         except OperationFailure:
-            print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/60)...")
+            print(f"[WARNING] Waiting for PRIMARY election ({attempt + 1}/30)...")
             time.sleep(2)
 
     raise RuntimeError("[ERROR] MongoDB PRIMARY node was not elected.")
