@@ -23,6 +23,7 @@ def mongodb_container():
 
     # ✅ Ensure MongoDB starts properly before proceeding
     wait_for_mongo_ready(client)
+    wait_for_primary(client)
 
     yield mongo_url  # ✅ Yield the correct MongoDB URL to test functions
     mongo.stop()
@@ -48,3 +49,24 @@ def wait_for_mongo_ready(client):
             print(f"[WARNING] MongoDB not ready, retrying ({attempt + 1}/30)...")
             time.sleep(2)
     raise RuntimeError("[ERROR] MongoDB did not become responsive in time.")
+
+
+def wait_for_primary(client):
+    """✅ Ensure MongoDB PRIMARY node is elected before running transactions."""
+    print("[INFO] Waiting for MongoDB PRIMARY node election...")
+
+    for attempt in range(30):  # Maximum wait time: 60 seconds
+        try:
+            status = client.admin.command("replSetGetStatus")
+            primary_node = next(
+                (member for member in status["members"] if member["stateStr"] == "PRIMARY"),
+                None
+            )
+            if primary_node:
+                print(f"[INFO] PRIMARY node elected: {primary_node['name']}")
+                return
+        except OperationFailure:
+            print(f"[WARNING] PRIMARY node not available yet, retrying ({attempt + 1}/30)...")
+            time.sleep(2)
+
+    raise RuntimeError("[ERROR] No PRIMARY node found for MongoDB replica set.")
