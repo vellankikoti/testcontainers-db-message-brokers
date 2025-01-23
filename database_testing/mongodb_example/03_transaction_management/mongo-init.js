@@ -17,7 +17,7 @@ try {
     rs.initiate(cfg);
 }
 
-// ✅ Wait for PRIMARY election
+// ✅ Wait until MongoDB elects a PRIMARY node
 print("⏳ Waiting for MongoDB PRIMARY node election...");
 let isReady = false;
 while (!isReady) {
@@ -29,6 +29,6 @@ while (!isReady) {
         }
     } catch (e) {
         print("⏳ Still waiting for PRIMARY node...");
-        sleep(1000);
+        sleep(2000);
     }
 }
