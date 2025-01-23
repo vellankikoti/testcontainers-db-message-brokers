@@ -1,7 +1,7 @@
 FROM mongo:6.0
 
-# Copy MongoDB replica set initialization script
+# Copy the MongoDB initialization script
 COPY mongo-init.js /docker-entrypoint-initdb.d/mongo-init.js
 
-# ✅ Override the default entrypoint to force replica set
-ENTRYPOINT ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+# ✅ Set MongoDB to run as a replica set
+CMD ["mongod", "--replSet", "rs0", "--bind_ip_all"]
