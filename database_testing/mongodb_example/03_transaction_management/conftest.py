@@ -22,7 +22,6 @@ def stop_existing_mongo_containers():
 def mongodb_client():
     """Start a MongoDB container with a properly configured replica set."""
 
-    # ✅ Ensure no MongoDB container is running before starting a new one
     stop_existing_mongo_containers()
 
     print("[INFO] 🚀 Starting MongoDB container...")
@@ -31,7 +30,6 @@ def mongodb_client():
 
     mongo.start()
 
-    # ✅ Get MongoDB connection URL with correct exposed port
     mongo_host = "localhost"
     mongo_port = mongo.get_exposed_port(27017)
     mongo_url = f"mongodb://{mongo_host}:{mongo_port}"
@@ -44,14 +42,14 @@ def mongodb_client():
     wait_for_mongo_ready(client)
     wait_for_primary(client)
 
-    yield client  # ✅ Yield the actual MongoDB client
+    yield client  
 
     print("[INFO] ⏹️ Stopping MongoDB container...")
     mongo.stop()
 
 
 def wait_for_mongo_ready(client):
-    """✅ Ensure MongoDB is ready before running tests."""
+    """Wait until MongoDB is ready before running tests."""
     print("[INFO] ⏳ Waiting for MongoDB to become responsive...")
     for attempt in range(30):
         try:
@@ -65,10 +63,10 @@ def wait_for_mongo_ready(client):
 
 
 def wait_for_primary(client):
-    """✅ Ensure MongoDB PRIMARY node is elected before running transactions."""
+    """Ensure MongoDB PRIMARY node is elected before running transactions."""
     print("[INFO] ⏳ Waiting for MongoDB PRIMARY node election...")
 
-    for attempt in range(30):
+    for attempt in range(30):  # Maximum wait time: 60 seconds
         try:
             status = client.admin.command("replSetGetStatus")
             primary_node = next(
