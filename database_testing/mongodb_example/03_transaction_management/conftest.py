@@ -27,14 +27,15 @@ def mongodb_client():
 
     print("[INFO] 🚀 Starting MongoDB container...")
 
-    mongo = MongoDbContainer("my-mongo-replica:latest").with_command(
-        "--replSet rs0 --bind_ip_all --port 27017"
-    )
+    mongo = MongoDbContainer("my-mongo-replica:latest")
 
     mongo.start()
 
-    # ✅ Get MongoDB connection URL
-    mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
+    # ✅ Get MongoDB connection URL with correct exposed port
+    mongo_host = "localhost"
+    mongo_port = mongo.get_exposed_port(27017)
+    mongo_url = f"mongodb://{mongo_host}:{mongo_port}"
+
     print(f"[INFO] ✅ MongoDB connection URL: {mongo_url}")
 
     client = MongoClient(mongo_url)
@@ -43,7 +44,7 @@ def mongodb_client():
     wait_for_mongo_ready(client)
     wait_for_primary(client)
 
-    yield client  # ✅ Yield the actual client, not just the URL
+    yield client  # ✅ Yield the actual MongoDB client
 
     print("[INFO] ⏹️ Stopping MongoDB container...")
     mongo.stop()
@@ -52,7 +53,7 @@ def mongodb_client():
 def wait_for_mongo_ready(client):
     """✅ Ensure MongoDB is ready before running tests."""
     print("[INFO] ⏳ Waiting for MongoDB to become responsive...")
-    for attempt in range(30):  # Maximum wait time: 60 seconds
+    for attempt in range(30):
         try:
             client.admin.command("ping")
             print(f"[INFO] ✅ MongoDB is responsive (Attempt {attempt + 1}/30).")
@@ -67,7 +68,7 @@ def wait_for_primary(client):
     """✅ Ensure MongoDB PRIMARY node is elected before running transactions."""
     print("[INFO] ⏳ Waiting for MongoDB PRIMARY node election...")
 
-    for attempt in range(30):  # Maximum wait time: 60 seconds
+    for attempt in range(30):
         try:
             status = client.admin.command("replSetGetStatus")
             primary_node = next(
