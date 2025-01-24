@@ -6,31 +6,37 @@ services:
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
     networks:
       - mongo_network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 10s
-      retries: 10
+    volumes:
+      - mongo_data:/data/db
 
   mongo-init:
     image: mongo:6.0
     container_name: mongo-init
-    restart: "no"
     depends_on:
-      mongo-db:
-        condition: service_healthy
-    entrypoint: [ "bash", "-c", "sleep 10 && mongosh --host mongo-db:27017 --file /docker-entrypoint-initdb.d/mongo-init.js && echo 'MongoDB Replica Set Initialized'" ]
+      - mongo-db
+    restart: "no"
     volumes:
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./wait-for-it.sh:/wait-for-it.sh
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        chmod +x /wait-for-it.sh &&
+        /wait-for-it.sh mongo-db:27017 --timeout=60 --strict -- echo "MongoDB is up" &&
+        mongosh --host mongo-db --eval '
+          rs.initiate({
+            _id: "rs0",
+            version: 1,
+            members: [{ _id: 0, host: "mongo-db:27017" }]
+          });
+        ' &&
+        echo "✅ Replica set initialized successfully!"
     networks:
       - mongo_network
 
-volumes:
-  mongo_data:
-
 networks:
   mongo_network:
+
+volumes:
+  mongo_data:
