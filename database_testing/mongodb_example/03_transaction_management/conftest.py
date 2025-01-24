@@ -3,7 +3,7 @@ import time
 import subprocess
 from pymongo import MongoClient, errors
 
-COMPOSE_FILE = "docker-compose.yml"  # Ensure this file exists in the correct directory
+COMPOSE_FILE = "docker-compose.yml"
 
 def start_mongo():
     """Start MongoDB using Docker Compose."""
@@ -15,35 +15,38 @@ def stop_existing_mongo():
     print("[INFO] 🛑 Stopping existing MongoDB containers...")
     subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, "down", "-v"], check=False)
 
-def wait_for_mongo(mongo_url, retries=30, delay=2):
-    """Wait for MongoDB to become responsive."""
-    print("[INFO] ⏳ Waiting for MongoDB to be ready...")
+def wait_for_primary(mongo_url, retries=30, delay=2):
+    """Ensure MongoDB PRIMARY node is elected before running transactions."""
+    print("[INFO] ⏳ Waiting for MongoDB PRIMARY node election...")
+    client = MongoClient(mongo_url, serverSelectionTimeoutMS=2000)
+
     for attempt in range(retries):
         try:
-            client = MongoClient(mongo_url, serverSelectionTimeoutMS=2000)
-            client.admin.command("ping")
-            print(f"[INFO] ✅ MongoDB is ready (Attempt {attempt+1}/{retries})")
-            return True
-        except errors.ServerSelectionTimeoutError:
-            print(f"[WARNING] 🚨 MongoDB not ready, retrying ({attempt+1}/{retries})...")
+            status = client.admin.command("replSetGetStatus")
+            primary = next((m for m in status["members"] if m["stateStr"] == "PRIMARY"), None)
+            if primary:
+                print(f"[INFO] 🎉 PRIMARY node elected: {primary['name']}")
+                return
+        except errors.OperationFailure:
+            print(f"[WARNING] 🚨 PRIMARY node not available yet, retrying ({attempt+1}/{retries})...")
             time.sleep(delay)
-    raise RuntimeError("[ERROR] ❌ MongoDB did not become responsive in time.")
+
+    raise RuntimeError("[ERROR] ❌ No PRIMARY node found for MongoDB replica set.")
 
 @pytest.fixture(scope="session")
 def mongodb_client():
     """Ensure MongoDB is running via Docker Compose before tests."""
     
-    stop_existing_mongo()  # Stop any existing containers
-    start_mongo()  # Start MongoDB
+    stop_existing_mongo()
+    start_mongo()
 
-    # Get MongoDB URL from Docker Compose setup
+    # MongoDB connection URL
     mongo_url = "mongodb://localhost:27017"
-    
-    # Wait until MongoDB is ready
-    wait_for_mongo(mongo_url)
+
+    # Ensure MongoDB is fully initialized before running tests
+    wait_for_primary(mongo_url)
 
     client = MongoClient(mongo_url)
     yield client
 
-    # Stop containers after tests
     stop_existing_mongo()
