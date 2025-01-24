@@ -36,8 +36,9 @@ def mongodb_client():
 
     print("[INFO] 🚀 Starting MongoDB container...")
 
+    # ✅ FIXED: Explicitly set the correct MongoDB startup command
     mongo = MongoDbContainer("mongo:6.0").with_command(
-        "--replSet rs0 --bind_ip_all --port 27017"
+        "mongod --replSet rs0 --bind_ip_all --port 27017"
     )
 
     mongo.start()
@@ -50,7 +51,7 @@ def mongodb_client():
 
     client = MongoClient(mongo_url)
 
-    # ✅ Ensure MongoDB starts properly before proceeding
+    # ✅ FIXED: Ensure MongoDB starts properly before proceeding
     wait_for_mongo_ready(client)
     force_replica_set_init(client)
 
