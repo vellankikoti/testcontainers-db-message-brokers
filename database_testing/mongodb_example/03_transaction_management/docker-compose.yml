@@ -30,11 +30,11 @@ services:
     command:
       - |
         sleep 10 &&
-        mongosh --host mongo-db --eval '
+        mongosh --host localhost:27017 --eval '
           rs.initiate({
             _id: "rs0",
             version: 1,
-            members: [{ _id: 0, host: "mongo-db:27017" }]
+            members: [{ _id: 0, host: "localhost:27017" }]
           });
         ' &&
         echo "✅ Replica set initialized successfully!"
