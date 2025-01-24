@@ -11,13 +11,10 @@ def mongodb_container():
     """
     with MongoDbContainer("mongo:6.0") \
         .with_exposed_ports(27017) \
-        .with_env("MONGO_INITDB_ROOT_USERNAME", "test") \
-        .with_env("MONGO_INITDB_ROOT_PASSWORD", "test") \
-        .with_env("MONGO_INITDB_DATABASE", "test_db") \
-        .with_command("--replSet rs0 --bind_ip_all") \
+        .with_command("--replSet rs0 --bind_ip_all") \  # 🔥 No authentication
         .with_volume_mapping("/tmp/mongo-data", "/data/db", mode="rw") as mongo:
 
-        mongo_url = f"mongodb://test:test@localhost:{mongo.get_exposed_port(27017)}/test_db"
+        mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
 
         print(f"⏳ Waiting for MongoDB to be ready at {mongo_url}")
         wait_for_mongo(mongo_url)
