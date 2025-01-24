@@ -1,40 +1,3 @@
-"""
-03_transaction_management.py - Demonstrates transaction management in MongoDB with Testcontainers.
-
-This example shows how to use MongoDB transactions to ensure atomicity in multi-operation scenarios.
-"""
-import time
-import pytest
-from pymongo import MongoClient
-from testcontainers.mongodb import MongoDbContainer
-
-@pytest.fixture(scope="module")
-def mongodb_container():
-    """
-    Starts a MongoDB container in Testcontainers with replica set enabled for transactions.
-    """
-    with MongoDbContainer("mongo:6.0") as mongo:
-        mongo.with_command("--replSet rs0")  # Enable replica set
-        mongo.start()
-        
-        # Wait for MongoDB to start up
-        time.sleep(5)
-
-        # Initialize Replica Set
-        client = MongoClient(mongo.get_connection_url())
-        client.admin.command("replSetInitiate")
-        time.sleep(5)  # Give some time for replica set to initialize
-
-        yield mongo.get_connection_url()
-
-@pytest.fixture(scope="module")
-def mongodb_client(mongodb_container):
-    """
-    Returns a MongoDB client connected to the Testcontainers MongoDB instance.
-    """
-    client = MongoClient(mongodb_container)
-    return client
-
 def test_transaction_commit(mongodb_client):
     """
     Tests MongoDB transactions by committing multiple operations.
@@ -87,4 +50,3 @@ def test_transaction_rollback(mongodb_client):
 
     finally:
         session.end_session()
-
