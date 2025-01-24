@@ -27,7 +27,7 @@ def wait_for_primary(mongo_url, retries=30, delay=2):
             if status.get("isWritablePrimary"):
                 print(f"[INFO] 🎉 PRIMARY node elected: {status}")
                 return
-        except errors.OperationFailure:
+        except errors.ServerSelectionTimeoutError:
             print(f"[WARNING] 🚨 PRIMARY node not available yet, retrying ({attempt+1}/{retries})...")
             time.sleep(delay)
 
