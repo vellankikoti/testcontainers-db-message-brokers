@@ -1,30 +1,30 @@
 services:
   mongo:
     image: mongo:6.0
-    container_name: mongo-debug
+    container_name: mongo-db
     restart: always
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
-    networks:
-      - mongo_network
     volumes:
       - mongo_data:/data/db
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - mongo_network
 
   mongo-init:
     image: mongo:6.0
     container_name: mongo-init
     depends_on:
       - mongo
+    restart: "no"
+    entrypoint: ["bash", "-c", "sleep 5 && mongosh --host mongo:27017 /docker-entrypoint-initdb.d/mongo-init.js"]
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
     networks:
       - mongo_network
-    volumes:
-      - ./init-mongo.sh:/init-mongo.sh
-    entrypoint: [ "bash", "/init-mongo.sh" ]
-
-networks:
-  mongo_network:
-    driver: bridge
 
 volumes:
   mongo_data:
+
+networks:
+  mongo_network:
