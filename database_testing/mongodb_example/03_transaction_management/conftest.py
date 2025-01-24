@@ -2,8 +2,7 @@ import time
 import pytest
 from pymongo import MongoClient
 
-MONGO_URI = "mongodb://mongo-db:27017"
-
+MONGO_URI = "mongodb://localhost:27017"  # Use localhost for pytest
 
 def wait_for_primary():
     """Wait for MongoDB to elect a PRIMARY node before running tests."""
@@ -21,7 +20,6 @@ def wait_for_primary():
         time.sleep(2)
         retries -= 1
     raise Exception("❌ MongoDB PRIMARY node did not start in time.")
-
 
 @pytest.fixture(scope="session")
 def mongodb_client():
