@@ -12,13 +12,13 @@ def mongodb_container():
     - Enables Replica Set to allow transactions.
     - Waits until MongoDB is PRIMARY.
     """
-    with MongoDbContainer("mongo:6.0")
-        .with_exposed_ports(27017)
-        .with_env("MONGO_INITDB_ROOT_USERNAME", "test")
-        .with_env("MONGO_INITDB_ROOT_PASSWORD", "test")
-        .with_env("MONGO_REPLICA_HOST", "localhost")
-        .with_env("MONGO_INITDB_DATABASE", "test_db")
-        .with_command("--replSet rs0 --bind_ip_all")
+    with MongoDbContainer("mongo:6.0") \
+        .with_exposed_ports(27017) \
+        .with_env("MONGO_INITDB_ROOT_USERNAME", "test") \
+        .with_env("MONGO_INITDB_ROOT_PASSWORD", "test") \
+        .with_env("MONGO_REPLICA_HOST", "localhost") \
+        .with_env("MONGO_INITDB_DATABASE", "test_db") \
+        .with_command("--replSet rs0 --bind_ip_all") \
         .with_volume_mapping("/tmp/mongo-data", "/data/db", mode="rw") as mongo:
 
         mongo_url = f"mongodb://test:test@localhost:{mongo.get_exposed_port(27017)}/test_db"
