@@ -11,10 +11,10 @@ def mongodb_container():
     """
     with MongoDbContainer("mongo:6.0") \
         .with_exposed_ports(27017) \
-        .with_command("--replSet rs0 --bind_ip_all") \ 
+        .with_command("--replSet rs0 --bind_ip_all") \
         .with_volume_mapping("/tmp/mongo-data", "/data/db", mode="rw") as mongo:
 
-        # Corrected MongoDB connection URL
+        # Get the correct MongoDB connection URL
         mongo_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
 
         print(f"⏳ Waiting for MongoDB to be ready at {mongo_url}")
