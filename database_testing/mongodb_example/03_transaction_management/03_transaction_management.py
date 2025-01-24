@@ -4,32 +4,33 @@
 This example shows how to use MongoDB transactions to ensure atomicity in multi-operation scenarios.
 """
 import pytest
-import pymongo
+from pymongo import MongoClient
 
 @pytest.mark.transaction
 def test_transaction_commit(mongodb_client):
     """Tests MongoDB transaction commit and rollback."""
-    
-    db = mongodb_client["test_db"]
-    users = db["users"]
 
-    session = mongodb_client.start_session()
+    db = mongodb_client["test_db"]
+    users_collection = db["users"]
+
+    session = mongodb_client.start_session()  # Explicitly start session
     session.start_transaction()
 
-    try:
-        users.insert_one({"name": "Alice", "email": "alice@example.com"}, session=session)
-        users.insert_one({"name": "Bob", "email": "bob@example.com"}, session=session)
-        users.update_one({"name": "Alice"}, {"$set": {"email": "alice@updated.com"}}, session=session)
+    # Insert sample data
+    users_collection.insert_one({"name": "Alice", "email": "alice@example.com"}, session=session)
+    users_collection.insert_one({"name": "Bob", "email": "bob@example.com"}, session=session)
 
-        session.commit_transaction()
-        print("[INFO] ✅ Transaction committed successfully.")
-    except Exception as e:
-        session.abort_transaction()
-        print(f"[ERROR] ❌ Transaction failed: {e}")
+    # Commit the transaction
+    session.commit_transaction()
 
-    session.end_session()
+    # Validate committed data
+    assert users_collection.find_one({"name": "Alice"})["email"] == "alice@example.com"
+    assert users_collection.find_one({"name": "Bob"}) is not None
 
-    # Assertions
-    assert users.find_one({"name": "Alice"})["email"] == "alice@updated.com"
-    assert users.find_one({"name": "Bob"}) is not None
-    print("[INFO] ✅ Assertions passed!")
+    # Rollback test
+    session.start_transaction()
+    users_collection.delete_one({"name": "Alice"}, session=session)
+    session.abort_transaction()
+
+    # Ensure rollback worked
+    assert users_collection.find_one({"name": "Alice"}) is not None
