@@ -4,6 +4,7 @@ import subprocess
 from pymongo import MongoClient, errors
 
 COMPOSE_FILE = "docker-compose.yml"
+MONGO_URI = "mongodb://mongo-debug:27017/?replicaSet=rs0"
 
 def start_mongo():
     """Start MongoDB using Docker Compose."""
@@ -39,13 +40,10 @@ def mongodb_client():
     stop_existing_mongo()
     start_mongo()
 
-    # MongoDB connection URL
-    mongo_url = "mongodb://localhost:27017"
-
     # Ensure MongoDB is fully initialized before running tests
-    wait_for_primary(mongo_url)
+    wait_for_primary(MONGO_URI)
 
-    client = MongoClient(mongo_url)
+    client = MongoClient(MONGO_URI)
     yield client
 
     stop_existing_mongo()
