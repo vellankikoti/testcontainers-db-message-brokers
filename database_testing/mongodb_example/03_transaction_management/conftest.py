@@ -1,78 +1,43 @@
 import pytest
-import subprocess
 import time
+import subprocess
 from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
+from pymongo.errors import ServerSelectionTimeoutError
 
 COMPOSE_FILE = "docker-compose.yml"
 
 def stop_existing_mongo():
-    """Stop any running MongoDB containers using Docker Compose."""
+    """Stops and removes any existing MongoDB containers before running tests."""
     print("[INFO] 🛑 Stopping existing MongoDB containers...")
-    try:
-        # Use "docker compose" (without hyphen)
-        subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, "down", "-v"], check=True)
-        print("[INFO] ✅ Existing MongoDB containers stopped.")
-    except subprocess.CalledProcessError as e:
-        print(f"[WARNING] ⚠️ Error while stopping MongoDB: {e}")
-
+    subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, "down", "-v"], check=False)
+    print("[INFO] ✅ Existing MongoDB containers stopped.")
 
 @pytest.fixture(scope="session")
 def mongodb_client():
-    """Start MongoDB using Docker Compose with a properly initialized replica set."""
+    """Start MongoDB via Docker Compose with proper replica set initialization."""
     
-    # Stop any running MongoDB instance
     stop_existing_mongo()
 
     print("[INFO] 🚀 Starting MongoDB using Docker Compose...")
-    try:
-        subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, "up", "-d"], check=True)
-        print("[INFO] ✅ MongoDB container started.")
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"[ERROR] ❌ Failed to start MongoDB container: {e}")
+    subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, "up", "-d"], check=True)
+    print("[INFO] ✅ MongoDB container started.")
 
-    # Wait for MongoDB to be ready
+    # ✅ Wait until MongoDB is ready before proceeding
     mongo_url = "mongodb://localhost:27017"
-    client = MongoClient(mongo_url)
-    wait_for_mongo_ready(client)
-    wait_for_primary(client)
+    client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
 
-    yield client  # Provide the client to tests
-
-    # Cleanup after tests
-    print("[INFO] ⏹️ Stopping MongoDB after tests...")
-    stop_existing_mongo()
-
-
-def wait_for_mongo_ready(client, retries=30, delay=2):
-    """Ensure MongoDB is ready before running tests."""
-    print("[INFO] ⏳ Waiting for MongoDB to become responsive...")
-    for attempt in range(retries):
+    for attempt in range(30):  # Wait up to 60 seconds
         try:
             client.admin.command("ping")
-            print(f"[INFO] ✅ MongoDB is responsive (Attempt {attempt + 1}/{retries}).")
-            return
+            print(f"[INFO] ✅ MongoDB is responsive (Attempt {attempt + 1}/30).")
+            break
         except ServerSelectionTimeoutError:
-            print(f"[WARNING] 🚨 MongoDB not ready, retrying ({attempt + 1}/{retries})...")
-            time.sleep(delay)
-    raise RuntimeError("[ERROR] ❌ MongoDB did not become responsive in time.")
+            print(f"[WARNING] 🚨 MongoDB not ready, retrying ({attempt + 1}/30)...")
+            time.sleep(2)
+    else:
+        raise RuntimeError("[ERROR] ❌ MongoDB did not become responsive in time.")
 
+    yield client
 
-def wait_for_primary(client, retries=30, delay=2):
-    """Ensure MongoDB PRIMARY node is elected before running transactions."""
-    print("[INFO] ⏳ Waiting for MongoDB PRIMARY node election...")
-    for attempt in range(retries):
-        try:
-            status = client.admin.command("replSetGetStatus")
-            primary_node = next(
-                (member for member in status["members"] if member["stateStr"] == "PRIMARY"),
-                None
-            )
-            if primary_node:
-                print(f"[INFO] 🎉 PRIMARY node elected: {primary_node['name']}")
-                return
-        except OperationFailure:
-            print(f"[WARNING] 🚨 PRIMARY node not available yet, retrying ({attempt + 1}/{retries})...")
-            time.sleep(delay)
-
-    raise RuntimeError("[ERROR] ❌ No PRIMARY node found for MongoDB replica set.")
+    print("[INFO] ⏹️ Stopping MongoDB after tests...")
+    stop_existing_mongo()
