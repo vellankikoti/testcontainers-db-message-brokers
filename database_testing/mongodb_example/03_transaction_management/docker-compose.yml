@@ -7,9 +7,9 @@ services:
     ports:
       - "27017:27017"
     networks:
-      - mongo_network
-    volumes:
-      - mongo_data:/data/db
+      mongo_network:
+        aliases:
+          - mongo-db
 
   mongo-init:
     image: mongo:6.0
@@ -17,6 +17,8 @@ services:
     depends_on:
       - mongo-db
     restart: "no"
+    networks:
+      - mongo_network
     volumes:
       - ./wait-for-it.sh:/wait-for-it.sh
     entrypoint: ["/bin/bash", "-c"]
@@ -32,8 +34,6 @@ services:
           });
         ' &&
         echo "✅ Replica set initialized successfully!"
-    networks:
-      - mongo_network
 
 networks:
   mongo_network:
