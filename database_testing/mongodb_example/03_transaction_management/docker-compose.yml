@@ -10,13 +10,18 @@ services:
       mongo_network:
         aliases:
           - mongo-db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.runCommand('ping').ok" ]
+      interval: 5s
+      retries: 5
+      start_period: 10s
 
   mongo-init:
     image: mongo:6.0
     container_name: mongo-init
     depends_on:
-      - mongo-db
-    restart: "no"
+      mongo-db:
+        condition: service_healthy
     networks:
       - mongo_network
     volumes:
@@ -24,8 +29,7 @@ services:
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
-        chmod +x /wait-for-it.sh &&
-        /wait-for-it.sh mongo-db:27017 --timeout=60 --strict -- echo "MongoDB is up" &&
+        sleep 10 &&
         mongosh --host mongo-db --eval '
           rs.initiate({
             _id: "rs0",
