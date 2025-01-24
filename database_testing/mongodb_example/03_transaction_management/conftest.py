@@ -10,7 +10,7 @@ COMPOSE_FILE = "docker-compose.yml"
 def stop_existing_mongo():
     """Stop and remove existing MongoDB container using Docker Compose."""
     print("[INFO] 🛑 Stopping MongoDB (docker-compose down)...")
-    subprocess.run(["docker-compose", "-f", COMPOSE_FILE, "down", "-v"], check=False)
+    subprocess.run(["docker compose", "-f", COMPOSE_FILE, "down", "-v"], check=False)
 
 @pytest.fixture(scope="session")
 def mongodb_client():
