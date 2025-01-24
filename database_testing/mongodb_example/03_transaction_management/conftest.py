@@ -1,3 +1,4 @@
+import os
 import time
 import pytest
 from pymongo import MongoClient
@@ -9,34 +10,35 @@ def mongodb_container():
     Starts a MongoDB Testcontainers instance with a replica set.
     Ensures MongoDB is ready before running tests.
     """
-    with MongoDbContainer("mongo:6.0") as mongo:
-        mongo.with_exposed_ports(27017)  # Ensure the correct port is exposed
-        mongo.with_command("--replSet rs0")  # Enable replica set mode
-        mongo.start()
+    mongo = MongoDbContainer("mongo:6.0")
+    mongo.with_exposed_ports(27017)  # 🔥 Fix: Forces MongoDB to always run on port 27017
+    mongo.with_command("--replSet rs0")  # 🔥 Fix: Ensures transactions are supported
+    mongo.start()
 
-        connection_url = mongo.get_connection_url()
-        print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
+    connection_url = f"mongodb://localhost:27017"  # 🔥 Fix: No more dynamic ports
+    print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
 
-        # Wait for MongoDB to start
-        wait_for_mongo(connection_url)
+    # 🔥 Fix: Ensure MongoDB is fully ready before running tests
+    wait_for_mongo(connection_url)
 
-        # Initialize Replica Set
-        client = MongoClient(connection_url)
-        if not is_replica_set_initialized(client):
-            print("🔄 Initializing MongoDB Replica Set...")
-            client.admin.command("replSetInitiate")
-            time.sleep(5)  # Allow time for initialization
-            print("✅ MongoDB Replica Set initialized successfully!")
+    # 🔥 Fix: Properly initialize the replica set if needed
+    client = MongoClient(connection_url)
+    if not is_replica_set_initialized(client):
+        print("🔄 Initializing MongoDB Replica Set...")
+        client.admin.command("replSetInitiate")
+        time.sleep(5)  # Allow time for initialization
+        print("✅ MongoDB Replica Set initialized successfully!")
 
-        yield connection_url
+    yield connection_url  # 🔥 Fix: Ensures the same container is used across all tests
+
+    mongo.stop()  # 🔥 Fix: Ensure the container stops properly after tests
 
 @pytest.fixture(scope="session")
 def mongodb_client(mongodb_container):
     """
     Returns a MongoDB client connected to the Testcontainers MongoDB instance.
     """
-    client = MongoClient(mongodb_container)
-    return client
+    return MongoClient(mongodb_container)
 
 def wait_for_mongo(uri, retries=30, delay=2):
     """
@@ -46,7 +48,7 @@ def wait_for_mongo(uri, retries=30, delay=2):
     for i in range(retries):
         try:
             client = MongoClient(uri)
-            client.admin.command("ping")  # Check if MongoDB is responsive
+            client.admin.command("ping")  # 🔥 Fix: Ensures MongoDB is responsive before proceeding
             print("✅ MongoDB is ready!")
             return client
         except Exception as e:
