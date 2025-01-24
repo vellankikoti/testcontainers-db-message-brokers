@@ -3,16 +3,17 @@ services:
     image: mongo:6.0
     container_name: mongo-debug
     restart: always
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
-      interval: 5s
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
       timeout: 5s
-      retries: 10
 
   mongo-init:
     image: mongo:6.0
@@ -20,17 +21,18 @@ services:
       mongo:
         condition: service_healthy
     restart: "no"
-    entrypoint: >
+    command: >
       bash -c "
-      echo '[INFO] 🚀 Waiting for MongoDB to be ready...';
-      until mongosh --host mongo:27017 --eval 'db.runCommand({ ping: 1 })'; do
-          echo '[INFO] ⏳ Waiting for MongoDB...';
-          sleep 2;
-      done;
-      echo '[INFO] ✅ MongoDB is up. Initializing Replica Set...';
-      mongosh --host mongo:27017 --eval 'rs.initiate({_id: \"rs0\", members: [{ _id: 0, host: \"mongo:27017\" }]})';
-      echo '[INFO] 🎉 Replica Set Initialized Successfully!';
+        echo '[INFO] Initializing MongoDB Replica Set...' &&
+        sleep 5 &&
+        mongosh --host mongo --eval '
+          rs.initiate({
+            _id: \"rs0\",
+            members: [{ _id: 0, host: \"mongo:27017\" }]
+          });
+        ' &&
+        echo '[INFO] MongoDB Replica Set Initialized Successfully!'
       "
-
+  
 volumes:
   mongo_data:
