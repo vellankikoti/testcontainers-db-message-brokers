@@ -10,6 +10,7 @@ def mongodb_container():
     Ensures MongoDB is ready before running tests.
     """
     with MongoDbContainer("mongo:6.0") as mongo:
+        mongo.with_exposed_ports(27017)  # Explicitly expose port to avoid conflicts
         mongo.with_command("--replSet rs0")  # Enable replica set
         mongo.start()
         
@@ -21,7 +22,12 @@ def mongodb_container():
 
         # Initialize Replica Set
         client = MongoClient(connection_url)
-        client.admin.command("replSetInitiate")
+        try:
+            client.admin.command("replSetInitiate")
+            print("✅ MongoDB Replica Set initialized successfully!")
+        except Exception as e:
+            print(f"⚠️ Replica Set already initialized or failed: {e}")
+
         time.sleep(5)  # Allow some time for replication setup
 
         yield connection_url
@@ -34,7 +40,7 @@ def mongodb_client(mongodb_container):
     client = MongoClient(mongodb_container)
     return client
 
-def wait_for_mongo(uri, retries=30, delay=2):
+def wait_for_mongo(uri, retries=30, delay=3):
     """
     Waits for MongoDB to be ready before running tests.
     Retries the connection until MongoDB responds.
