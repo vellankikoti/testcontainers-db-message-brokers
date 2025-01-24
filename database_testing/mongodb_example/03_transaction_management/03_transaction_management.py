@@ -33,4 +33,3 @@ def test_transaction_commit(mongodb_client):
     assert users.find_one({"name": "Alice"})["email"] == "alice@updated.com"
     assert users.find_one({"name": "Bob"}) is not None
     print("[INFO] ✅ Assertions passed!")
-
