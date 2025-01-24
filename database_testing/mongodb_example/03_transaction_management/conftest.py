@@ -6,17 +6,13 @@ from pymongo import MongoClient
 @pytest.fixture(scope="session")
 def mongodb_container():
     """
-    Starts a MongoDB container with proper settings for transactions.
-    Fixes:
-    - Ensures MongoDB does not exit by keeping volume mapping.
-    - Enables Replica Set to allow transactions.
-    - Waits until MongoDB is PRIMARY.
+    Starts a MongoDB container with a Replica Set (required for transactions).
+    Ensures MongoDB stays running by keeping a writable volume.
     """
     with MongoDbContainer("mongo:6.0") \
         .with_exposed_ports(27017) \
         .with_env("MONGO_INITDB_ROOT_USERNAME", "test") \
         .with_env("MONGO_INITDB_ROOT_PASSWORD", "test") \
-        .with_env("MONGO_REPLICA_HOST", "localhost") \
         .with_env("MONGO_INITDB_DATABASE", "test_db") \
         .with_command("--replSet rs0 --bind_ip_all") \
         .with_volume_mapping("/tmp/mongo-data", "/data/db", mode="rw") as mongo:
