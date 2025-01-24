@@ -22,8 +22,8 @@ def wait_for_primary(mongo_url, retries=30, delay=2):
 
     for attempt in range(retries):
         try:
-            status = client.admin.command("isMaster")
-            if status.get("ismaster"):
+            status = client.admin.command("hello")
+            if status.get("isWritablePrimary"):
                 print(f"[INFO] 🎉 PRIMARY node elected: {status}")
                 return
         except errors.OperationFailure:
