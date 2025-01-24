@@ -19,4 +19,18 @@ while (true) {
     sleep(2000);
 }
 
-print("✅ Replica Set Initialized Successfully!");
+// Initialize the replica set if not already initialized
+try {
+    let cfg = {
+        _id: "rs0",
+        members: [
+            { _id: 0, host: "mongo-db:27017" }
+        ]
+    };
+    rs.initiate(cfg);
+    print("✅ Replica Set Initialized!");
+} catch (err) {
+    print("⚠️ Replica Set already initialized.");
+}
+
+print("✅ MongoDB Ready for Transactions!");
