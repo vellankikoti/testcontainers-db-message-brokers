@@ -1,21 +1,22 @@
-import os
 import time
 import pytest
 from pymongo import MongoClient
-from testcontainers.mongodb import MongoDbContainer
+from testcontainers.core.container import DockerContainer
 
 @pytest.fixture(scope="session")
 def mongodb_container():
     """
-    Starts a MongoDB Testcontainers instance with a replica set.
+    Starts a MongoDB container with a properly configured replica set.
     Ensures MongoDB is ready before running tests.
     """
-    mongo = MongoDbContainer("mongo:6.0")
-    mongo.with_exposed_ports(27017)  # 🔥 Fix: Forces MongoDB to always run on port 27017
-    mongo.with_command("--replSet rs0")  # 🔥 Fix: Ensures transactions are supported
-    mongo.start()
+    mongo = DockerContainer("mongo:6.0") \
+        .with_exposed_ports(27017) \  # 🔥 Forces MongoDB to use the correct static port
+        .with_volume_mapping("/tmp/mongo-data", "/data/db") \  # 🔥 Fix: Prevents MongoDB from crashing
+        .with_command("--replSet rs0 --bind_ip_all")  # 🔥 Fix: Ensures MongoDB properly initializes replica set
 
-    connection_url = f"mongodb://localhost:27017"  # 🔥 Fix: No more dynamic ports
+    mongo.start()
+    
+    connection_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
     print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
 
     # 🔥 Fix: Ensure MongoDB is fully ready before running tests
@@ -29,9 +30,9 @@ def mongodb_container():
         time.sleep(5)  # Allow time for initialization
         print("✅ MongoDB Replica Set initialized successfully!")
 
-    yield connection_url  # 🔥 Fix: Ensures the same container is used across all tests
+    yield connection_url
 
-    mongo.stop()  # 🔥 Fix: Ensure the container stops properly after tests
+    mongo.stop()  # 🔥 Fix: Ensures the container stops properly after tests
 
 @pytest.fixture(scope="session")
 def mongodb_client(mongodb_container):
