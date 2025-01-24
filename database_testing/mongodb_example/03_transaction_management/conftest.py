@@ -11,14 +11,17 @@ def mongodb_container():
     """
     mongo = MongoDbContainer("mongo:6.0").with_command(
         "--replSet rs0 --bind_ip_all --setParameter enableTestCommands=1"
-    )
+    ).with_env("MONGO_INITDB_ROOT_USERNAME", "test") \
+     .with_env("MONGO_INITDB_ROOT_PASSWORD", "test") \
+     .with_env("MONGO_INITDB_DATABASE", "test_db")
+
     mongo.start()
 
-    connection_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
+    connection_url = f"mongodb://test:test@localhost:{mongo.get_exposed_port(27017)}/test_db"
     print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
 
     client = wait_for_mongo(connection_url)
-    initialize_replica_set(client)  # 🔥 Ensure MongoDB becomes PRIMARY
+    initialize_replica_set(client)
 
     yield connection_url
     mongo.stop()
@@ -44,15 +47,15 @@ def wait_for_mongo(uri, retries=30, delay=2):
 
 def initialize_replica_set(client, retries=30, delay=3):
     """
-    Ensures MongoDB becomes PRIMARY by initializing the Replica Set and waiting for election completion.
+    Ensures MongoDB becomes PRIMARY by initializing the Replica Set.
     """
     try:
         status = client.admin.command("replSetGetStatus")
-        if status.get("myState") == 1:  # 1 = PRIMARY
+        if status.get("myState") == 1:
             print("✅ MongoDB is already PRIMARY!")
             return
     except Exception:
-        pass  # Replica set not initialized yet
+        pass  
 
     print("🔄 Initializing MongoDB Replica Set...")
     client.admin.command("replSetInitiate")
