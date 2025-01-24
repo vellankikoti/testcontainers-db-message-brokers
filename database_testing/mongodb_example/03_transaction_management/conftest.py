@@ -1,43 +1,30 @@
-import pytest
 import time
-import subprocess
-from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo import MongoClient, errors
 
-COMPOSE_FILE = "docker-compose.yml"
-
-def stop_existing_mongo():
-    """Stops and removes any existing MongoDB containers before running tests."""
-    print("[INFO] 🛑 Stopping existing MongoDB containers...")
-    subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, "down", "-v"], check=False)
-    print("[INFO] ✅ Existing MongoDB containers stopped.")
+def wait_for_mongo(mongo_url, retries=30, delay=2):
+    """Wait for MongoDB to become responsive."""
+    print("[INFO] ⏳ Waiting for MongoDB to be ready...")
+    for attempt in range(retries):
+        try:
+            client = MongoClient(mongo_url, serverSelectionTimeoutMS=2000)
+            client.admin.command("ping")
+            print(f"[INFO] ✅ MongoDB is ready (Attempt {attempt+1}/{retries})")
+            return True
+        except errors.ServerSelectionTimeoutError:
+            print(f"[WARNING] 🚨 MongoDB not ready, retrying ({attempt+1}/{retries})...")
+            time.sleep(delay)
+    raise RuntimeError("[ERROR] ❌ MongoDB did not become responsive in time.")
 
 @pytest.fixture(scope="session")
 def mongodb_client():
-    """Start MongoDB via Docker Compose with proper replica set initialization."""
-    
-    stop_existing_mongo()
+    """Ensure MongoDB is running via Docker Compose before tests."""
+    start_mongo()
 
-    print("[INFO] 🚀 Starting MongoDB using Docker Compose...")
-    subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, "up", "-d"], check=True)
-    print("[INFO] ✅ MongoDB container started.")
-
-    # ✅ Wait until MongoDB is ready before proceeding
+    # Get MongoDB URL from Docker Compose setup
     mongo_url = "mongodb://localhost:27017"
-    client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
+    
+    # Wait until MongoDB is ready
+    wait_for_mongo(mongo_url)
 
-    for attempt in range(30):  # Wait up to 60 seconds
-        try:
-            client.admin.command("ping")
-            print(f"[INFO] ✅ MongoDB is responsive (Attempt {attempt + 1}/30).")
-            break
-        except ServerSelectionTimeoutError:
-            print(f"[WARNING] 🚨 MongoDB not ready, retrying ({attempt + 1}/30)...")
-            time.sleep(2)
-    else:
-        raise RuntimeError("[ERROR] ❌ MongoDB did not become responsive in time.")
-
+    client = MongoClient(mongo_url)
     yield client
-
-    print("[INFO] ⏹️ Stopping MongoDB after tests...")
-    stop_existing_mongo()
