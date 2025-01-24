@@ -11,19 +11,20 @@ from testcontainers.mongodb import MongoDbContainer
 @pytest.fixture(scope="module")
 def mongodb_container():
     """
-    Starts a MongoDB container with replica set enabled for transactions.
+    Starts a MongoDB container with a replica set enabled for transactions.
     """
     with MongoDbContainer("mongo:6.0") as mongo:
-        mongo.with_command("--replSet rs0")  # Enable replica set for transactions
+        mongo.with_command("--replSet rs0")  # Enable replica set mode
         mongo.start()
 
-        # Initialize replica set (Required for Transactions)
+        # Wait for MongoDB to fully start
+        time.sleep(5)
+
+        # Initialize the replica set
         client = MongoClient(mongo.get_connection_url())
         client.admin.command("replSetInitiate")
-        
-        # Wait for MongoDB to be ready
-        time.sleep(5)  # Give MongoDB some time to initialize the replica set
-        
+        time.sleep(5)  # Allow time for initialization
+
         yield mongo.get_connection_url()
 
 @pytest.fixture(scope="module")
@@ -86,3 +87,4 @@ def test_transaction_rollback(mongodb_client):
 
     finally:
         session.end_session()
+
