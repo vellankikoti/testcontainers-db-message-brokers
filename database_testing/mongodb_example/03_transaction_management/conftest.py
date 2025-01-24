@@ -6,20 +6,20 @@ from testcontainers.mongodb import MongoDbContainer
 @pytest.fixture(scope="session")
 def mongodb_container():
     """
-    Starts a MongoDB container with a properly configured replica set.
-    Ensures MongoDB is PRIMARY before running tests.
+    Starts a MongoDB container with proper replica set configuration.
+    Waits for MongoDB to become PRIMARY before running tests.
     """
     mongo = MongoDbContainer("mongo:6.0").with_command(
         "--replSet rs0 --bind_ip_all --setParameter enableTestCommands=1"
     ).with_env("MONGO_INITDB_ROOT_USERNAME", "test") \
      .with_env("MONGO_INITDB_ROOT_PASSWORD", "test") \
-     .with_env("MONGO_INITDB_DATABASE", "test_db")
+     .with_env("MONGO_INITDB_DATABASE", "test_db") \
+     .with_exposed_ports(27017)
 
     mongo.start()
-
     connection_url = f"mongodb://test:test@localhost:{mongo.get_exposed_port(27017)}/test_db"
-    print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
 
+    print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
     client = wait_for_mongo(connection_url)
     initialize_replica_set(client)
 
