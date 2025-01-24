@@ -9,10 +9,12 @@ def mongodb_container():
     Starts a MongoDB container with a properly configured replica set.
     Ensures MongoDB is ready before running tests.
     """
-    mongo = DockerContainer("mongo:6.0") \
-        .with_exposed_ports(27017) \  # 🔥 Forces MongoDB to use the correct static port
-        .with_volume_mapping("/tmp/mongo-data", "/data/db") \  # 🔥 Fix: Prevents MongoDB from crashing
+    mongo = (
+        DockerContainer("mongo:6.0")
+        .with_exposed_ports(27017)  # 🔥 Forces MongoDB to use the correct static port
+        .with_volume_mapping("/tmp/mongo-data", "/data/db")  # 🔥 Fix: Prevents MongoDB from crashing
         .with_command("--replSet rs0 --bind_ip_all")  # 🔥 Fix: Ensures MongoDB properly initializes replica set
+    )
 
     mongo.start()
     
