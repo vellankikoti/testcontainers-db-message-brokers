@@ -18,7 +18,6 @@ services:
       - mongo
     networks:
       - mongo_network
-    restart: "no"
     volumes:
       - ./init-mongo.sh:/init-mongo.sh
     entrypoint: [ "bash", "/init-mongo.sh" ]
