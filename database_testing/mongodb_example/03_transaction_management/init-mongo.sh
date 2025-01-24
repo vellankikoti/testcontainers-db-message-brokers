@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "[INFO] ⏳ Waiting for MongoDB to start..."
+echo "[INFO] ⏳ Waiting for MongoDB to be available..."
 until mongosh --host mongo-debug:27017 --eval "db.runCommand({ ping: 1 })" >/dev/null 2>&1; do
     sleep 2
 done
@@ -13,9 +13,8 @@ rs.initiate({
 });
 EOF
 
-# ✅ Wait until PRIMARY node is elected
 echo "[INFO] ⏳ Waiting for MongoDB PRIMARY node election..."
-until mongosh --host mongo-debug:27017 --eval "db.isMaster().ismaster" | grep "true"; do
+until mongosh --host mongo-debug:27017 --quiet --eval "db.hello().isWritablePrimary" | grep "true"; do
     echo "[WARNING] 🚨 PRIMARY node not ready, retrying..."
     sleep 2
 done
