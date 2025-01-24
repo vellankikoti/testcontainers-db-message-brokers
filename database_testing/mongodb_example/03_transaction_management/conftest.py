@@ -15,12 +15,12 @@ def stop_existing_mongo_containers():
         print(f"[INFO] 🛑 Stopping existing MongoDB container {container.id}...")
         try:
             container.stop()
-            container.wait()  # ✅ Wait for the container to fully stop
+            container.wait()
             container.remove()
             print(f"[INFO] ✅ Container {container.id} stopped and removed.")
         except docker.errors.APIError as e:
             print(f"[WARNING] ⚠️ Error while stopping/removing {container.id}: {e}")
-            time.sleep(2)  # Wait and retry
+            time.sleep(2)
             try:
                 container.remove(force=True)
                 print(f"[INFO] ✅ Container {container.id} force removed.")
@@ -63,7 +63,7 @@ def mongodb_client():
 def wait_for_mongo_ready(client):
     """Wait until MongoDB is ready before running tests."""
     print("[INFO] ⏳ Waiting for MongoDB to become responsive...")
-    for attempt in range(60):  # Increased wait time to 120 seconds
+    for attempt in range(60):  
         try:
             client.admin.command("ping")
             print(f"[INFO] ✅ MongoDB is responsive (Attempt {attempt + 1}/60).")
