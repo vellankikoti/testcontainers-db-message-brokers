@@ -2,7 +2,7 @@ import time
 import pytest
 from pymongo import MongoClient
 
-MONGO_URI = "mongodb://localhost:27017"  # Use localhost for pytest
+MONGO_URI = "mongodb://localhost:27017/?replicaSet=rs0"  # Explicitly define replica set
 
 def wait_for_primary():
     """Wait for MongoDB to elect a PRIMARY node before running tests."""
@@ -25,5 +25,5 @@ def wait_for_primary():
 def mongodb_client():
     """Ensure MongoDB is running and initialized before tests."""
     wait_for_primary()
-    client = MongoClient(MONGO_URI)
+    client = MongoClient(MONGO_URI, directConnection=False)  # Ensure proper replica set connection
     return client
