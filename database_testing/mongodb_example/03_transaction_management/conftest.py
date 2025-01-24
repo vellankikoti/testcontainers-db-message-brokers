@@ -22,10 +22,9 @@ def wait_for_primary(mongo_url, retries=30, delay=2):
 
     for attempt in range(retries):
         try:
-            status = client.admin.command("replSetGetStatus")
-            primary = next((m for m in status["members"] if m["stateStr"] == "PRIMARY"), None)
-            if primary:
-                print(f"[INFO] 🎉 PRIMARY node elected: {primary['name']}")
+            status = client.admin.command("isMaster")
+            if status.get("ismaster"):
+                print(f"[INFO] 🎉 PRIMARY node elected: {status}")
                 return
         except errors.OperationFailure:
             print(f"[WARNING] 🚨 PRIMARY node not available yet, retrying ({attempt+1}/{retries})...")
