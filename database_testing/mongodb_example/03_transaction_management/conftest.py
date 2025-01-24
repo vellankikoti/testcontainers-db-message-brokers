@@ -1,29 +1,51 @@
 import time
 import pytest
 from pymongo import MongoClient
-
-MONGO_URI = "mongodb://mongo-db:27017/?replicaSet=rs0"  # Ensure replica set
-
-def wait_for_primary():
-    """Wait for MongoDB to become PRIMARY before running tests."""
-    client = MongoClient(MONGO_URI, directConnection=False)  # Ensure proper replica set connection
-    retries = 30
-    while retries > 0:
-        try:
-            status = client.admin.command("replSetGetStatus")
-            primary = any(member["stateStr"] == "PRIMARY" for member in status["members"])
-            if primary:
-                print("✅ MongoDB PRIMARY node is ready.")
-                return
-        except Exception as e:
-            print(f"🚨 MongoDB not ready, retrying ({30 - retries}/30)... {e}")
-        time.sleep(3)
-        retries -= 1
-    raise Exception("❌ MongoDB PRIMARY node did not start in time.")
+from testcontainers.mongodb import MongoDbContainer
 
 @pytest.fixture(scope="session")
-def mongodb_client():
-    """Ensure MongoDB is running and initialized before tests."""
-    wait_for_primary()
-    client = MongoClient(MONGO_URI, directConnection=False)  # Ensure proper replica set connection
+def mongodb_container():
+    """
+    Starts a MongoDB Testcontainers instance with a replica set.
+    Ensures MongoDB is ready before running tests.
+    """
+    with MongoDbContainer("mongo:6.0") as mongo:
+        mongo.with_command("--replSet rs0")  # Enable replica set
+        mongo.start()
+        
+        connection_url = mongo.get_connection_url()
+        print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
+
+        # Wait for MongoDB to be accessible
+        wait_for_mongo(connection_url)
+
+        # Initialize Replica Set
+        client = MongoClient(connection_url)
+        client.admin.command("replSetInitiate")
+        time.sleep(5)  # Allow some time for replication setup
+
+        yield connection_url
+
+@pytest.fixture(scope="session")
+def mongodb_client(mongodb_container):
+    """
+    Returns a MongoDB client connected to the Testcontainers MongoDB instance.
+    """
+    client = MongoClient(mongodb_container)
     return client
+
+def wait_for_mongo(uri, retries=30, delay=2):
+    """
+    Waits for MongoDB to be ready before running tests.
+    Retries the connection until MongoDB responds.
+    """
+    for i in range(retries):
+        try:
+            client = MongoClient(uri)
+            client.admin.command("ping")  # Check if MongoDB is responsive
+            print("✅ MongoDB is ready!")
+            return client
+        except Exception as e:
+            print(f"⏳ MongoDB not ready, retrying ({i}/{retries})... {e}")
+            time.sleep(delay)
+    raise Exception("🚨 MongoDB failed to start!")
