@@ -1,7 +1,15 @@
-// mongo-init.js
-print("🚀 Initiating MongoDB replica set...");
-rs.initiate({
+rs.initiate(
+  {
     _id: "rs0",
-    members: [{ _id: 0, host: "mongo-debug:27017" }]
-});
-print("🎉 Replica set initialized successfully!");
+    version: 1,
+    members: [
+      { _id: 0, host: "mongo:27017" }
+    ]
+  }
+);
+
+while (!rs.isMaster().ismaster) {
+  sleep(100);
+}
+
+print("✅ Replica Set Initialized Successfully!");
