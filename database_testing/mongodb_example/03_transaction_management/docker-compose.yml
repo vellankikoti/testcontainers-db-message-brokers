@@ -1,5 +1,5 @@
 services:
-  mongo:
+  mongo-db:
     image: mongo:6.0
     container_name: mongo-db
     restart: always
@@ -13,16 +13,17 @@ services:
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
+      timeout: 10s
       retries: 10
 
   mongo-init:
     image: mongo:6.0
     container_name: mongo-init
-    depends_on:
-      mongo:
-        condition: service_healthy
     restart: "no"
-    entrypoint: ["bash", "-c", "mongosh --host mongo:27017 --file /docker-entrypoint-initdb.d/mongo-init.js && sleep 10"]
+    depends_on:
+      mongo-db:
+        condition: service_healthy
+    entrypoint: [ "bash", "-c", "sleep 10 && mongosh --host mongo-db:27017 --file /docker-entrypoint-initdb.d/mongo-init.js && echo 'MongoDB Replica Set Initialized'" ]
     volumes:
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
     networks:
