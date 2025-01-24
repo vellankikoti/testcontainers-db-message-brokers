@@ -12,12 +12,12 @@ def mongodb_container():
     mongo = (
         DockerContainer("mongo:6.0")
         .with_exposed_ports(27017)  # 🔥 Forces MongoDB to use the correct static port
-        .with_volume_mapping("/tmp/mongo-data", "/data/db")  # 🔥 Fix: Prevents MongoDB from crashing
-        .with_command("--replSet rs0 --bind_ip_all")  # 🔥 Fix: Ensures MongoDB properly initializes replica set
+        .with_volume_mapping("/tmp/mongo-data", "/data/db")  # 🔥 Prevents MongoDB from crashing
+        .with_command("--replSet rs0 --bind_ip_all --setParameter enableTestCommands=1")  # 🔥 Ensures MongoDB properly initializes replica set
     )
 
     mongo.start()
-    
+
     connection_url = f"mongodb://localhost:{mongo.get_exposed_port(27017)}"
     print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
 
@@ -51,7 +51,7 @@ def wait_for_mongo(uri, retries=30, delay=2):
     for i in range(retries):
         try:
             client = MongoClient(uri)
-            client.admin.command("ping")  # 🔥 Fix: Ensures MongoDB is responsive before proceeding
+            client.admin.command("ping")  # 🔥 Ensures MongoDB is responsive before proceeding
             print("✅ MongoDB is ready!")
             return client
         except Exception as e:
