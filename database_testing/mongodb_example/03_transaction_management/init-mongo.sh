@@ -13,4 +13,11 @@ rs.initiate({
 });
 EOF
 
-echo "[INFO] 🎉 Replica Set Initialized. Exiting..."
+# ✅ Wait until PRIMARY node is elected
+echo "[INFO] ⏳ Waiting for MongoDB PRIMARY node election..."
+until mongosh --host mongo-debug:27017 --eval "db.isMaster().ismaster" | grep "true"; do
+    echo "[WARNING] 🚨 PRIMARY node not ready, retrying..."
+    sleep 2
+done
+
+echo "[INFO] 🎉 PRIMARY Node Elected. MongoDB Ready!"
