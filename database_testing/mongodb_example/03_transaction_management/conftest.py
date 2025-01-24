@@ -16,7 +16,7 @@ def mongodb_container():
     with mongo_container as mongo:
         mongo_url = mongo.get_connection_url()
         client = MongoClient(mongo_url)
-        
+
         # Wait for MongoDB to start
         time.sleep(5)
 
@@ -25,3 +25,20 @@ def mongodb_container():
         time.sleep(5)  # Give it time to initialize
 
         yield mongo_url
+
+
+@pytest.fixture(scope="session")
+def mongodb_client(mongodb_container):
+    """Provides a MongoDB client connected to the Testcontainer instance."""
+    client = MongoClient(mongodb_container)
+    
+    # Wait until the primary node is ready
+    for _ in range(30):
+        try:
+            if client.admin.command("isMaster")["ismaster"]:
+                break
+        except Exception:
+            time.sleep(2)
+
+    yield client
+    client.close()
