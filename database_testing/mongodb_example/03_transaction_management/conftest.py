@@ -11,9 +11,9 @@ def mongodb_container():
     """
     mongo = (
         DockerContainer("mongo:6.0")
-        .with_exposed_ports(27017)  # 🔥 Fix: Forces MongoDB to always use a static port
-        .with_volume_mapping("/tmp/mongo-data", "/data/db", mode="rw")  # 🔥 Fix: Ensures MongoDB has write access
-        .with_command("--replSet rs0 --bind_ip_all --setParameter enableTestCommands=1")  # 🔥 Fix: Ensures MongoDB properly initializes replica set
+        .with_exposed_ports(27017)  # 🔥 Forces MongoDB to always use a static port
+        .with_volume_mapping("/tmp/mongo-data", "/data/db", mode="rw")  # 🔥 Ensures MongoDB has write access
+        .with_command("--replSet rs0 --bind_ip_all --setParameter enableTestCommands=1")  # 🔥 Ensures MongoDB properly initializes replica set
     )
 
     mongo.start()
@@ -22,15 +22,10 @@ def mongodb_container():
     print(f"⏳ Waiting for MongoDB to be ready at {connection_url}")
 
     # 🔥 Fix: Ensure MongoDB is fully ready before running tests
-    wait_for_mongo(connection_url)
+    client = wait_for_mongo(connection_url)
 
-    # 🔥 Fix: Properly initialize the replica set if needed
-    client = MongoClient(connection_url)
-    if not is_replica_set_initialized(client):
-        print("🔄 Initializing MongoDB Replica Set...")
-        client.admin.command("replSetInitiate")
-        time.sleep(5)  # Allow time for initialization
-        print("✅ MongoDB Replica Set initialized successfully!")
+    # 🔥 Fix: Initialize the replica set properly
+    initialize_replica_set(client)
 
     yield connection_url
 
@@ -51,7 +46,7 @@ def wait_for_mongo(uri, retries=30, delay=2):
     for i in range(retries):
         try:
             client = MongoClient(uri)
-            client.admin.command("ping")  # 🔥 Fix: Ensures MongoDB is responsive before proceeding
+            client.admin.command("ping")  # 🔥 Ensures MongoDB is responsive before proceeding
             print("✅ MongoDB is ready!")
             return client
         except Exception as e:
@@ -59,12 +54,35 @@ def wait_for_mongo(uri, retries=30, delay=2):
             time.sleep(delay)
     raise Exception("🚨 MongoDB failed to start!")
 
-def is_replica_set_initialized(client):
+def initialize_replica_set(client, retries=20, delay=3):
     """
-    Checks if the MongoDB replica set is already initialized.
+    Initializes the MongoDB replica set properly and ensures PRIMARY election completes.
     """
     try:
+        print("🔄 Checking if MongoDB Replica Set is already initialized...")
         status = client.admin.command("replSetGetStatus")
-        return "set" in status
+        if status.get("myState", 0) == 1:  # 1 = PRIMARY
+            print("✅ MongoDB is already PRIMARY!")
+            return
     except Exception:
-        return False
+        pass  # Replica set not initialized yet
+
+    print("🔄 Initializing MongoDB Replica Set...")
+    client.admin.command("replSetInitiate")
+
+    print("⏳ Waiting for MongoDB to become PRIMARY...")
+    for i in range(retries):
+        try:
+            status = client.admin.command("replSetGetStatus")
+            primary = next(
+                (m for m in status.get("members", []) if m["stateStr"] == "PRIMARY"),
+                None,
+            )
+            if primary:
+                print(f"✅ MongoDB is now PRIMARY ({primary['name']})!")
+                return
+        except Exception as e:
+            print(f"⏳ MongoDB still not PRIMARY, retrying ({i}/{retries})... {e}")
+        time.sleep(delay)
+
+    raise Exception("🚨 MongoDB never became PRIMARY, something is wrong!")
