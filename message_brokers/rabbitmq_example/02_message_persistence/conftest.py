@@ -3,13 +3,14 @@ conftest.py - Pytest fixture for RabbitMQ using Testcontainers.
 
 Fixes:
 - Ensures RabbitMQ messages persist across restart.
-- Uses tmpfs storage to keep messages in memory after restart.
+- Uses volume mapping instead of `with_tmpfs()` (fix for RabbitMqContainer issue).
 """
 
 import time
 import pytest
 import pika
 import requests
+from testcontainers.core.container import DockerContainer  # ✅ Use Generic DockerContainer
 from testcontainers.rabbitmq import RabbitMqContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 
@@ -18,12 +19,12 @@ from testcontainers.core.waiting_utils import wait_for_logs
 def rabbitmq_container():
     """
     Pytest fixture to start a RabbitMQ container and ensure it is ready.
-    Uses tmpfs for persistence across restarts.
+    Uses volume mapping to persist RabbitMQ messages across restart.
     """
-    container = RabbitMqContainer("rabbitmq:3.11-management") \
+    container = DockerContainer("rabbitmq:3.11-management") \
         .with_bind_ports(5672, 5672) \
         .with_bind_ports(15672, 15672) \
-        .with_tmpfs({"/var/lib/rabbitmq": ""})  # 🛠 Keep messages in memory
+        .with_volume_mapping("/tmp/rabbitmq_data", "/var/lib/rabbitmq")  # ✅ Persistent storage fix
 
     container.start()
     wait_for_logs(container, "Server startup complete", timeout=30)
