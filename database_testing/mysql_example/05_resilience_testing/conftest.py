@@ -16,9 +16,10 @@ MYSQL_DATABASE = "testdb"
 def mysql_container():
     """Start a MySQL container using Testcontainers."""
     mysql = MySqlContainer("mysql:8.0") \
-        .with_username(MYSQL_USER) \
-        .with_password(MYSQL_PASSWORD) \
-        .with_database(MYSQL_DATABASE)
+        .with_env("MYSQL_ROOT_PASSWORD", MYSQL_PASSWORD) \
+        .with_env("MYSQL_USER", MYSQL_USER) \
+        .with_env("MYSQL_PASSWORD", MYSQL_PASSWORD) \
+        .with_env("MYSQL_DATABASE", MYSQL_DATABASE)
 
     print("🚀 Starting MySQL container...")
     mysql.start()
