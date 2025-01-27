@@ -1,164 +1,185 @@
-# **Redis with Testcontainers**
+# **Redis Testing with Testcontainers 🚀**  
 
-## **Overview**
-This repository contains a collection of examples demonstrating how to use Testcontainers for testing various scenarios with Redis. Each example is accompanied by a detailed README file to help you understand the concepts and implementation.
-
----
-
-## **Table of Contents**
-1. [Getting Started](#getting-started)
-2. [Examples](#examples)
-    - [01. Basic Pub/Sub](#01-basic-pub-sub)
-    - [02. Message Persistence](#02-message-persistence)
-    - [03. Message Acknowledgements](#03-message-acknowledgements)
-    - [04. Performance Testing](#04-performance-testing)
-    - [05. Resilience Testing](#05-resilience-testing)
-    - [06. Simulating Failures](#06-simulating-failures)
-    - [07. Custom Docker Image](#07-custom-docker-image)
-    - [08. Expiry and TTL](#08-expiry-and-ttl)
-    - [09. Data Migration Testing](#09-data-migration-testing)
-    - [10. Multiple Containers](#10-multiple-containers)
-    - [11. Simulating Network Interruptions](#11-simulating-network-interruptions)
-    - [12. Distributed Transactions](#12-distributed-transactions)
-    - [13. Testing with Mock Services](#13-testing-with-mock-services)
-    - [14. Security Testing](#14-security-testing)
-3. [How to Run the Examples](#how-to-run-the-examples)
-4. [Troubleshooting](#troubleshooting)
-5. [Conftest.py](#conftestpy)
+Welcome to the **Redis Testing** section! This guide provides a **comprehensive overview** of how to use **Testcontainers** with **Redis**. It includes **real-world test cases** to validate **message integrity, persistence, resilience, and performance** using Redis.
 
 ---
 
-## **Getting Started**
-### **Prerequisites**
-- Python 3.10 or later
-- Docker installed and running on your system
-- Required Python packages:
+## **Table of Contents**  
+
+- [Overview](#overview)  
+- [Getting Started](#getting-started)  
+- [Redis Testing](#redis-testing)  
+- [Examples](#examples)  
+  - [01. Basic Publish/Subscribe Operations](#01-basic-publishsubscribe-operations)  
+  - [02. Message Persistence](#02-message-persistence)  
+  - [03. Data Integrity Testing](#03-data-integrity-testing)  
+  - [04. Performance Testing](#04-performance-testing)  
+  - [05. Field Constraints & Index Testing](#05-field-constraints--index-testing)  
+  - [06. Simulating Failures](#06-simulating-failures)  
+  - [07. Custom Docker Image](#07-custom-docker-image)  
+  - [08. Load Testing](#08-load-testing)  
+  - [09. Data Migration Testing](#09-data-migration-testing)  
+  - [10. Multiple Instances](#10-multiple-instances)  
+  - [11. Simulating Network Interruptions](#11-simulating-network-interruptions)  
+  - [12. Distributed Transactions](#12-distributed-transactions)  
+  - [13. Testing with Mock Services](#13-testing-with-mock-services)  
+  - [14. Security Testing](#14-security-testing)  
+- [How to Run the Examples](#how-to-run-the-examples)  
+- [Troubleshooting](#troubleshooting)  
+- [Contributing](#contributing)  
+
+---
+
+## **Overview**  
+
+This repository provides **real-world Redis testing examples** using **Testcontainers** in Python. Each test case follows a **structured approach**, from **basic publish/subscribe messaging** to **advanced resilience, performance, and security testing**.
+
+---
+
+## **Getting Started**  
+
+### **Prerequisites**  
+
+- **Python 3.10** or later  
+- **Docker installed and running** on your system  
+- Install required Python packages:  
   ```bash
-  pip install testcontainers redis pytest
+  pip install pytest redis testcontainers
   ```
 
 ---
 
-## **Examples**
+## **Redis Testing**  
 
-### 01. Basic Pub/Sub
-**Description**: Demonstrates a basic Redis publish-subscribe messaging pattern using Testcontainers.  
-**File**: `01_basic_pubsub.py`  
-**README**: [README.md](01_basic_pubsub/README.md)
-
-### 02. Message Persistence
-**Description**: Ensures that Redis persists messages even if the server restarts.  
-**File**: `02_message_persistence.py`  
-**README**: [README.md](02_message_persistence/README.md)
-
-### 03. Message Acknowledgements
-**Description**: Validates Redis Streams message acknowledgement and delivery guarantees.  
-**File**: `03_message_acknowledgements.py`  
-**README**: [README.md](03_message_acknowledgements/README.md)
-
-### 04. Performance Testing
-**Description**: Measures Redis’ throughput and latency under high-load conditions.  
-**File**: `04_performance_testing.py`  
-**README**: [README.md](04_performance_testing/README.md)
-
-### 05. Resilience Testing
-**Description**: Tests how Redis handles failures and recovers from crashes.  
-**File**: `05_resilience_testing.py`  
-**README**: [README.md](05_resilience_testing/README.md)
-
-### 06. Simulating Failures
-**Description**: Simulates Redis server failures and recovery scenarios.  
-**File**: `06_simulating_failures.py`  
-**README**: [README.md](06_simulating_failures/README.md)
-
-### 07. Custom Docker Image
-**Description**: Creates and tests a custom Redis Docker image with specific configurations.  
-**File**: `07_custom_docker_image.py`  
-**Dockerfile**: `Dockerfile`  
-**README**: [README.md](07_custom_docker_image/README.md)
-
-### 08. Expiry and TTL
-**Description**: Tests Redis key expiration, TTL settings, and eviction policies.  
-**File**: `08_expiry_ttl.py`  
-**README**: [README.md](08_expiry_ttl/README.md)
-
-### 09. Data Migration Testing
-**Description**: Uses Redis for migrating and syncing data between different systems.  
-**File**: `09_data_migration_testing.py`  
-**README**: [README.md](09_data_migration_testing/README.md)
-
-### 10. Multiple Containers
-**Description**: Simulates and tests Redis in a multi-container setup with other services.  
-**File**: `10_multiple_containers.py`  
-**README**: [README.md](10_multiple_containers/README.md)
-
-### 11. Simulating Network Interruptions
-**Description**: Tests Redis’ ability to recover from network disruptions.  
-**File**: `11_simulating_network_interruptions.py`  
-**README**: [README.md](11_simulating_network_interruptions/README.md)
-
-### 12. Distributed Transactions
-**Description**: Implements distributed transactions across multiple Redis instances.  
-**File**: `12_distributed_transactions.py`  
-**README**: [README.md](12_distributed_transactions/README.md)
-
-### 13. Testing with Mock Services
-**Description**: Mocks external services that interact with Redis for better test control.  
-**File**: `13_testing_with_mock_services.py`  
-**README**: [README.md](13_testing_with_mock_services/README.md)
-
-### 14. Security Testing
-**Description**: Tests Redis’ authentication, authorization, and encryption mechanisms.  
-**File**: `14_security_testing.py`  
-**README**: [README.md](14_security_testing/README.md)
+Redis is a **high-performance, in-memory data structure store** that can be used as a **database, cache, and message broker**. This section provides **Redis testing scenarios** using **Testcontainers** for containerized, automated testing.
 
 ---
 
-## **How to Run the Examples**
+## **Examples**  
 
-1. Clone the repository:
+### **01. Basic Publish/Subscribe Operations**  
+- **Description**: Tests Redis’ basic **publish-subscribe mechanism**.  
+- **File**: `redis_example/01_basic_pub_sub.py`  
+- **README**: [README.md](redis_example/01_basic_pub_sub/README.md)  
+
+### **02. Message Persistence**  
+- **Description**: Ensures **messages persist** across Redis restarts.  
+- **File**: `redis_example/02_message_persistence.py`  
+- **README**: [README.md](redis_example/02_message_persistence/README.md)  
+
+### **03. Data Integrity Testing**  
+- **Description**: Verifies **message ordering, durability, and duplication**.  
+- **File**: `redis_example/03_data_integrity_testing.py`  
+- **README**: [README.md](redis_example/03_data_integrity_testing/README.md)  
+
+### **04. Performance Testing**  
+- **Description**: Measures **Redis throughput and latency** under high-load scenarios.  
+- **File**: `redis_example/04_performance_testing.py`  
+- **README**: [README.md](redis_example/04_performance_testing/README.md)  
+
+### **05. Field Constraints & Index Testing**  
+- **Description**: Tests **Redis expiry policies, key constraints, and indexing mechanisms**.  
+- **File**: `redis_example/05_field_constraints_and_indexes.py`  
+- **README**: [README.md](redis_example/05_field_constraints_and_indexes/README.md)  
+
+### **06. Simulating Failures**  
+- **Description**: Simulates **Redis node crashes and network failures**.  
+- **File**: `redis_example/06_simulating_failures.py`  
+- **README**: [README.md](redis_example/06_simulating_failures/README.md)  
+
+### **07. Custom Docker Image**  
+- **Description**: Creates and tests a **custom Redis Docker image** with configurations.  
+- **File**: `redis_example/07_custom_docker_image.py`  
+- **Dockerfile**: `redis_example/Dockerfile`  
+- **README**: [README.md](redis_example/07_custom_docker_image/README.md)  
+
+### **08. Load Testing**  
+- **Description**: Simulates **high-throughput workloads** to benchmark Redis performance.  
+- **File**: `redis_example/08_load_testing.py`  
+- **README**: [README.md](redis_example/08_load_testing/README.md)  
+
+### **09. Data Migration Testing**  
+- **Description**: Uses Redis for **data migration across different environments**.  
+- **File**: `redis_example/09_data_migration_testing.py`  
+- **README**: [README.md](redis_example/09_data_migration_testing/README.md)  
+
+### **10. Multiple Instances**  
+- **Description**: Configures and tests **multiple Redis instances** for horizontal scaling.  
+- **File**: `redis_example/10_multiple_instances.py`  
+- **README**: [README.md](redis_example/10_multiple_instances/README.md)  
+
+### **11. Simulating Network Interruptions**  
+- **Description**: Tests Redis’ **fault tolerance against network disruptions**.  
+- **File**: `redis_example/11_simulating_network_interruptions.py`  
+- **README**: [README.md](redis_example/11_simulating_network_interruptions/README.md)  
+
+### **12. Distributed Transactions**  
+- **Description**: Implements **Redis transactions across multiple operations**.  
+- **File**: `redis_example/12_distributed_transactions.py`  
+- **README**: [README.md](redis_example/12_distributed_transactions/README.md)  
+
+### **13. Testing with Mock Services**  
+- **Description**: Mocks **external services interacting with Redis**.  
+- **File**: `redis_example/13_testing_with_mock_services.py`  
+- **README**: [README.md](redis_example/13_testing_with_mock_services/README.md)  
+
+### **14. Security Testing**  
+- **Description**: Tests Redis’ **authentication, encryption, and ACL rules**.  
+- **File**: `redis_example/14_security_testing.py`  
+- **README**: [README.md](redis_example/14_security_testing/README.md)  
+
+---
+
+## **How to Run the Examples**  
+
+1. **Clone the repository**:  
    ```bash
    git clone <repository-url>
    cd <repository-folder>
-   ```
+   ```  
 
-2. Install the required dependencies:
+2. **Install dependencies**:  
    ```bash
    pip install -r requirements.txt
-   ```
+   ```  
 
-3. Run an example:
+3. **Run an example**:  
    ```bash
-   python <example-file>.py
-   ```
+   python3 -m pytest <example-file>.py -v -s
+   ```  
 
-4. View the README file for detailed information about each example.
-
----
-
-## **Troubleshooting**
-
-### Common Issues
-1. **Docker Not Running**: Ensure Docker is installed and running on your system.
-2. **ModuleNotFoundError**: Install the required Python packages using:
-   ```bash
-   pip install testcontainers redis pytest
-   ```
-3. **Redis Container Not Starting**: Ensure sufficient system resources (memory, CPU) are available for Docker to start Redis.
-
-For more troubleshooting tips, refer to the troubleshooting guide.
+4. **Check the `README.md` file inside each example folder** for further details.  
 
 ---
 
-## **Conftest.py**
-The `conftest.py` file is used to define fixtures that can be shared across multiple test files. It typically contains setup code for Testcontainers, allowing you to initialize and manage Redis container instances for testing purposes.
+## **Troubleshooting**  
+
+### **Common Issues and Fixes**  
+
+- **Docker Not Running**  
+  ```bash
+  docker ps
+  ```  
+
+- **Port Conflicts**  
+  ```bash
+  docker ps | grep 6379  # Redis
+  ```  
+
+- **Missing Dependencies**  
+  ```bash
+  pip install -r requirements.txt
+  ```  
 
 ---
 
-## **Contributing**
-Feel free to contribute by adding new examples, improving existing ones, or reporting issues.
+## **Contributing**  
+
+- Feel free to **add new examples, improve existing ones, or report issues**.  
+- Contributions are welcome in **writing documentation, adding test cases, or optimizing performance tests**.  
 
 ---
 
-## 🚀 Happy Testing with Redis and Testcontainers! 🎉
+## **🚀 Happy Testing with Redis and Testcontainers!** 🎉  
 
+---
