@@ -76,7 +76,7 @@ python3 -m pytest 04_performance_testing.py -v -s
 
 When you run the test, you should see output similar to the following:
 
-![image](https://github.com/user-attachments/assets/725e9979-685c-4073-80b1-fb466cb427b3)
+![image](https://github.com/user-attachments/assets/ff2adb30-761d-438c-b2ff-b4ffadebc0c1)
 
 ---
 
