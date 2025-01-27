@@ -30,15 +30,13 @@ def test_mongodb_reconnect(mongodb_container, test_collection):
     mongodb_container.start()
     time.sleep(5)
 
-    # Create a new MongoDB client after recovery
+    # Ensure MongoDB is fully ready after restart
     print("🔄 Reconnecting to MongoDB...")
-    new_client = MongoClient("mongodb://localhost:27017", serverSelectionTimeoutMS=5000)
-    new_db = new_client.get_database("test_db")
-    new_collection = new_db.get_collection("resilience_test")
-
-    # Ensure MongoDB has restarted properly
+    mongo_url = "mongodb://localhost:27017"
+    
     for attempt in range(10):
         try:
+            new_client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
             new_client.server_info()
             print(f"✅ MongoDB reconnected successfully after {attempt + 1} seconds")
             break
@@ -48,7 +46,10 @@ def test_mongodb_reconnect(mongodb_container, test_collection):
     else:
         pytest.fail("❌ MongoDB did not restart successfully!")
 
-    # Verify data integrity
+    # Create a new MongoDB client and validate data integrity
+    new_db = new_client.get_database("test_db")
+    new_collection = new_db.get_collection("resilience_test")
+
     retrieved_data = new_collection.find_one({"status": "initial"})
     assert retrieved_data is not None, "❌ Data was lost after restart!"
     print("✅ Data is still available after restart.")
