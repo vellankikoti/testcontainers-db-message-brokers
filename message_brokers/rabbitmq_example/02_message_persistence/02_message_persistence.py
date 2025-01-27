@@ -16,10 +16,11 @@ def rabbitmq_container():
     Pytest fixture to start a RabbitMQ container.
 
     Returns:
-        str: RabbitMQ connection URL.
+        dict: RabbitMQ connection parameters.
     """
     with RabbitMqContainer("rabbitmq:3.9-management") as rabbitmq:
-        yield rabbitmq.get_connection_url()
+        rabbitmq.start()  # Ensure container is started
+        yield rabbitmq.get_connection_params()
 
 
 def test_rabbitmq_message_persistence(rabbitmq_container):
@@ -41,7 +42,13 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
     print("\nPublishing persistent messages to RabbitMQ...")
 
     # Establish connection
-    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq_container))
+    connection_params = pika.ConnectionParameters(
+        host=rabbitmq_container["host"],
+        port=rabbitmq_container["port"],
+        credentials=pika.PlainCredentials(rabbitmq_container["username"], rabbitmq_container["password"])
+    )
+
+    connection = pika.BlockingConnection(connection_params)
     channel = connection.channel()
 
     # Declare a durable queue
@@ -60,18 +67,19 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
 
     # Step 2: Stop and restart RabbitMQ
     print("\nStopping RabbitMQ container...")
-    rabbitmq_container_obj = RabbitMqContainer("rabbitmq:3.9-management")
-    rabbitmq_container_obj.stop()
+    time.sleep(3)  # Ensure messages are written before stopping
+    rabbitmq_container["container"].stop()
     time.sleep(5)  # Simulate downtime
     print("RabbitMQ container stopped.")
 
     print("\nRestarting RabbitMQ container...")
-    rabbitmq_container_obj.start()
+    rabbitmq_container["container"].start()
+    time.sleep(5)  # Allow RabbitMQ to restart
     print("RabbitMQ container restarted successfully!")
 
     # Step 3: Consume messages after restart
     print("\nConsuming messages from RabbitMQ after restart...")
-    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq_container))
+    connection = pika.BlockingConnection(connection_params)
     channel = connection.channel()
 
     # Declare the durable queue again
