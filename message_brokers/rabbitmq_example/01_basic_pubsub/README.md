@@ -73,7 +73,7 @@ python3 -m pytest 01_basic_pubsub.py -v -s
 
 When you run the test, you should see output similar to the following:
 
-![image](https://github.com/user-attachments/assets/725e9979-685c-4073-80b1-fb466cb427b3)
+![image](https://github.com/user-attachments/assets/2bce9c3e-6818-4cf2-9f00-187d1164953f)
 
 ---
 
