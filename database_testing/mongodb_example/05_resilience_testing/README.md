@@ -76,7 +76,7 @@ python3 -m pytest 05_resilience_testing.py -v -s
 
 When you run the test, you should see output similar to the following:
 
-![image](https://github.com/user-attachments/assets/725e9979-685c-4073-80b1-fb466cb427b3)
+<img width="946" alt="image" src="https://github.com/user-attachments/assets/4a8a826d-b378-4042-9e08-b1c34265f38f" />
 
 ---
 
