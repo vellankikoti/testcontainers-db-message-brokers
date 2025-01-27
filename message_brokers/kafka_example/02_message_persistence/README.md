@@ -73,7 +73,7 @@ python3 -m pytest 02_message_persistence.py -v -s
 
 When you run the test, you should see output similar to the following:
 
-![image](https://github.com/user-attachments/assets/725e9979-685c-4073-80b1-fb466cb427b3)
+![image](https://github.com/user-attachments/assets/dd40922b-2c11-49bf-878a-36bcce37f44b)
 
 ---
 
