@@ -58,13 +58,13 @@ pip3 install pytest testcontainers kafka-python
 Execute the test using `pytest`:
 
 ```bash
-python3 -m pytest 05_kafka_field_constraints.py -v -s
+python3 -m pytest 05_field_constraints_and_indexes.py -v -s
 ```
 
 or
 
 ```bash
-python -m pytest 05_kafka_field_constraints.py -v -s
+python -m pytest 05_field_constraints_and_indexes.py -v -s
 ```
 
 ---
