@@ -1,9 +1,3 @@
-"""
-01_basic_pubsub.py - Demonstrates basic Kafka Pub/Sub with Testcontainers.
-
-This example tests message publishing, consuming, and various messaging scenarios in Kafka.
-"""
-
 from testcontainers.kafka import KafkaContainer
 from kafka import KafkaProducer, KafkaConsumer
 import pytest
@@ -40,12 +34,23 @@ def test_basic_pubsub_single_message(kafka_bootstrap_server):
         bootstrap_servers=kafka_bootstrap_server,
         auto_offset_reset="earliest",
         group_id="test-group",
+        enable_auto_commit=True,
     )
-    message = next(consumer)
+
+    # Fetch messages using polling to avoid getting stuck
+    received_message = None
+    for _ in range(10):  # Retry for a few seconds
+        for message in consumer:
+            received_message = message.value
+            break  # Exit once a message is received
+        if received_message:
+            break
+        time.sleep(1)
+
     consumer.close()
 
     # Assert that the received message matches the sent message
-    assert message.value == b"Hello, Kafka!"
+    assert received_message == b"Hello, Kafka!"
 
 
 def test_basic_pubsub_multiple_messages(kafka_bootstrap_server):
@@ -73,9 +78,19 @@ def test_basic_pubsub_multiple_messages(kafka_bootstrap_server):
         bootstrap_servers=kafka_bootstrap_server,
         auto_offset_reset="earliest",
         group_id="test-group-multi",
+        enable_auto_commit=True,
     )
 
-    received_messages = [msg.value for msg in consumer]
+    received_messages = []
+    for _ in range(10):  # Retry loop for polling
+        for message in consumer:
+            received_messages.append(message.value)
+            if len(received_messages) == len(messages_to_send):
+                break  # Exit once all messages are received
+        if len(received_messages) == len(messages_to_send):
+            break
+        time.sleep(1)
+
     consumer.close()
 
     # Assert that all sent messages are received
