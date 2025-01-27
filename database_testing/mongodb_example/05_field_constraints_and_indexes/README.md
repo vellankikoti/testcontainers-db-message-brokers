@@ -63,13 +63,9 @@ python3 -m pytest 05_field_constraints_and_indexes.py -v -s
 ## **Expected Output**
 When you run the test, you should see output similar to this:
 
-```bash
-✅ Unique Index Constraint: Inserted first record successfully.
-✅ Unique Index Constraint Passed: Duplicate Prevented.
-✅ Data Type Constraint: Inserted valid age.
-✅ Data Type Constraint Passed: Rejected incorrect age type.
-✅ Index Performance Test Passed: Indexed query executed successfully.
-```
+![image](https://github.com/user-attachments/assets/108eee32-3b17-4e80-9c27-dcb752039143)
+
+---
 
 If the test fails, possible errors might be:
 - **Unique Index Failed** (Duplicate was allowed).
@@ -172,9 +168,7 @@ query_result = test_collection.find({"age": {"$gt": 25}})
 ## **Final Thoughts**
 This test ensures **MongoDB correctly enforces field constraints & indexing** to **prevent invalid data storage and optimize performance**.
 
----
 
 🔥 **Happy Testing!** 🚀  
-```
 
 ---
