@@ -23,17 +23,18 @@ def mysql_container():
 
     print("🚀 Starting MySQL container...")
     mysql.start()
-    time.sleep(10)  # Ensure MySQL initializes properly
+    time.sleep(10)  # ✅ Ensure MySQL initializes properly
 
     # Explicitly create `testuser` after MySQL starts
     print("🔧 Configuring MySQL users...")
     host = mysql.get_container_host_ip()
-    port = int(mysql.get_exposed_port(3306))
+    port = int(mysql.get_exposed_port(3306))  # ✅ Convert port to int
 
+    # **First connection using ROOT**
     root_conn = pymysql.connect(
         host=host,
         user="root",
-        password=MYSQL_ROOT_PASSWORD,  # May be empty due to MYSQL_ALLOW_EMPTY_PASSWORD
+        password=MYSQL_ROOT_PASSWORD,  # ✅ May be empty due to MYSQL_ALLOW_EMPTY_PASSWORD
         database=MYSQL_DATABASE,
         port=port,
         cursorclass=pymysql.cursors.DictCursor,
@@ -42,7 +43,7 @@ def mysql_container():
     cursor = root_conn.cursor()
     cursor.execute(f"CREATE USER IF NOT EXISTS '{MYSQL_USER}'@'%' IDENTIFIED BY '{MYSQL_PASSWORD}';")
     cursor.execute(f"GRANT ALL PRIVILEGES ON {MYSQL_DATABASE}.* TO '{MYSQL_USER}'@'%';")
-    cursor.execute("FLUSH PRIVILEGES;")
+    cursor.execute("FLUSH PRIVILEGES;")  # ✅ Ensures privileges are applied
     root_conn.commit()
     cursor.close()
     root_conn.close()
@@ -59,9 +60,9 @@ def mysql_container():
 def mysql_client(mysql_container):
     """Create a fresh MySQL connection after container restart."""
     host = mysql_container.get_container_host_ip()
-    port = int(mysql_container.get_exposed_port(3306))  # ✅ Ensuring port is an integer
+    port = int(mysql_container.get_exposed_port(3306))  # ✅ Convert port to int
 
-    for attempt in range(10):  # Retry logic for connecting to MySQL
+    for attempt in range(10):  # ✅ Retry logic for connecting to MySQL
         try:
             conn = pymysql.connect(
                 host=host,
