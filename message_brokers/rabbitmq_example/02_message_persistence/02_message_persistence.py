@@ -1,7 +1,9 @@
 """
 02_message_persistence.py - RabbitMQ Message Persistence Test
 
-Ensures messages persist across RabbitMQ restarts using Testcontainers.
+Fixes:
+- Ensures messages persist across RabbitMQ restart.
+- Uses tmpfs to keep RabbitMQ state during restart.
 """
 
 import time
@@ -47,7 +49,7 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
 
     # Step 3: Stop and Restart RabbitMQ
     print("\n⏳ Stopping RabbitMQ container...")
-    rabbitmq_container.stop()
+    rabbitmq_container.stop(kill=False)  # 🔥 Stop without deleting data
     time.sleep(5)  # Simulate downtime
     print("❌ RabbitMQ container stopped.")
 
