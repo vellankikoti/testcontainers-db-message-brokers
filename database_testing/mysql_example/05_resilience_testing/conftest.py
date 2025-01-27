@@ -19,11 +19,11 @@ def mysql_container():
     mysql = MySqlContainer("mysql:8.0") \
         .with_env("MYSQL_ROOT_PASSWORD", MYSQL_ROOT_PASSWORD) \
         .with_env("MYSQL_DATABASE", MYSQL_DATABASE) \
-        .with_command("--default-authentication-plugin=mysql_native_password")  # ✅ Fixes authentication issues
+        .with_command("--default-authentication-plugin=mysql_native_password")  # ✅ Fixes PyMySQL login issue
 
     print("🚀 Starting MySQL container...")
     mysql.start()
-    time.sleep(10)  # ✅ Ensures MySQL is fully initialized
+    time.sleep(15)  # ✅ Ensures MySQL is fully initialized
 
     # Explicitly create `testuser` and grant permissions
     print("🔧 Configuring MySQL users...")
@@ -41,6 +41,7 @@ def mysql_container():
                 port=port,
                 cursorclass=pymysql.cursors.DictCursor,
             )
+            print("✅ Connected to MySQL as root")
             break
         except pymysql.err.OperationalError as e:
             print(f"🔄 Waiting for MySQL root connection... Attempt {attempt + 1}/10: {e}")
