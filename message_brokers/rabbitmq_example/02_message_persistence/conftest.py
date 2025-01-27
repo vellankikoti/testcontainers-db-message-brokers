@@ -1,22 +1,20 @@
 """
-conftest.py - Shared fixtures for RabbitMQ example
+conftest.py - Shared test configuration for RabbitMQ Testcontainers.
+
+This file provides a fixture to start a RabbitMQ container before running tests.
 """
 
 import pytest
 from testcontainers.rabbitmq import RabbitMqContainer
-import pika
 
-@pytest.fixture(scope="module")
-def rabbitmq_container():
-    """Start a RabbitMQ container and provide the connection details."""
+
+@pytest.fixture(scope="session")
+def rabbitmq_bootstrap_server():
+    """
+    Pytest fixture to start a RabbitMQ container and provide its connection URL.
+
+    Returns:
+        str: RabbitMQ connection URL.
+    """
     with RabbitMqContainer("rabbitmq:3.9-management") as rabbitmq:
-        yield rabbitmq
-
-@pytest.fixture(scope="module")
-def rabbitmq_connection(rabbitmq_container):
-    """Set up a RabbitMQ connection."""
-    parameters = pika.ConnectionParameters(host=rabbitmq_container.get_container_host_ip(),
-                                           port=rabbitmq_container.get_exposed_port(5672))
-    connection = pika.BlockingConnection(parameters)
-    yield connection
-    connection.close()
+        yield rabbitmq.get_connection_url()
