@@ -1,7 +1,7 @@
 """
-conftest.py - Pytest fixture setup for Kafka testing with Testcontainers.
+conftest.py - Shared test configuration for Kafka Testcontainers.
 
-This file provides reusable pytest fixtures for managing Kafka containers.
+This file provides a fixture to start a Kafka container before running tests.
 """
 
 import pytest
@@ -9,29 +9,12 @@ from testcontainers.kafka import KafkaContainer
 
 
 @pytest.fixture(scope="session")
-def kafka_container():
+def kafka_bootstrap_server():
     """
-    Starts a Kafka container once per test session.
-    This avoids restarting the container multiple times, making tests faster.
+    Pytest fixture to start a Kafka container and provide its bootstrap server.
 
     Returns:
-        KafkaContainer: A running Kafka container instance.
+        str: Kafka bootstrap server URL.
     """
-    container = KafkaContainer("confluentinc/cp-kafka:latest")
-    container.start()
-    yield container
-    container.stop()
-
-
-@pytest.fixture(scope="function")
-def kafka_bootstrap_server(kafka_container):
-    """
-    Provides the Kafka bootstrap server URL for each test function.
-
-    Args:
-        kafka_container: The running Kafka container instance.
-
-    Returns:
-        str: The Kafka bootstrap server URL.
-    """
-    return kafka_container.get_bootstrap_server()
+    with KafkaContainer("confluentinc/cp-kafka:latest") as kafka:
+        yield kafka.get_bootstrap_server()
