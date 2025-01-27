@@ -15,35 +15,35 @@ MYSQL_DATABASE = "testdb"
 
 @pytest.fixture(scope="module")
 def mysql_container():
-    """Start a MySQL container using Testcontainers with correct permissions."""
+    """Start a MySQL container using Testcontainers with correct user permissions."""
     mysql = MySqlContainer("mysql:8.0") \
         .with_env("MYSQL_ROOT_PASSWORD", MYSQL_ROOT_PASSWORD) \
         .with_env("MYSQL_DATABASE", MYSQL_DATABASE) \
-        .with_env("MYSQL_ALLOW_EMPTY_PASSWORD", "yes")  # ✅ Allows root login without password
+        .with_command("--default-authentication-plugin=mysql_native_password")  # ✅ Fixes authentication issues
 
     print("🚀 Starting MySQL container...")
     mysql.start()
     time.sleep(10)  # ✅ Ensure MySQL initializes properly
 
-    # Explicitly create `testuser` after MySQL starts
+    # Explicitly create `testuser` and grant permissions
     print("🔧 Configuring MySQL users...")
     host = mysql.get_container_host_ip()
     port = int(mysql.get_exposed_port(3306))  # ✅ Convert port to int
 
-    # **First connection using ROOT**
     root_conn = pymysql.connect(
         host=host,
         user="root",
-        password=MYSQL_ROOT_PASSWORD,  # ✅ May be empty due to MYSQL_ALLOW_EMPTY_PASSWORD
+        password=MYSQL_ROOT_PASSWORD,
         database=MYSQL_DATABASE,
         port=port,
         cursorclass=pymysql.cursors.DictCursor,
     )
 
     cursor = root_conn.cursor()
-    cursor.execute(f"CREATE USER IF NOT EXISTS '{MYSQL_USER}'@'%' IDENTIFIED BY '{MYSQL_PASSWORD}';")
+    cursor.execute(f"CREATE USER IF NOT EXISTS '{MYSQL_USER}'@'%' IDENTIFIED WITH mysql_native_password BY '{MYSQL_PASSWORD}';")
     cursor.execute(f"GRANT ALL PRIVILEGES ON {MYSQL_DATABASE}.* TO '{MYSQL_USER}'@'%';")
-    cursor.execute("FLUSH PRIVILEGES;")  # ✅ Ensures privileges are applied
+    cursor.execute("ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'rootpassword';")  # ✅ Fixes root access issues
+    cursor.execute("FLUSH PRIVILEGES;")
     root_conn.commit()
     cursor.close()
     root_conn.close()
