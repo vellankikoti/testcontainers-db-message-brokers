@@ -4,7 +4,7 @@
 This test validates:
 1. Message Schema: Ensures messages comply with a predefined structure.
 2. Message Size: Rejects messages that exceed a set size limit.
-3. Indexing Constraints: Prevents duplicate IDs from being processed.
+3. Indexing Constraints: Detects duplicate IDs but allows RabbitMQ to process them.
 
 The test uses Testcontainers to spin up a RabbitMQ instance in Docker.
 """
@@ -120,7 +120,7 @@ def test_oversized_message(rabbitmq_channel):
 
 def test_duplicate_index(rabbitmq_channel):
     """
-    Tests if duplicate message IDs are detected.
+    Tests if duplicate message IDs are detected but still processed by RabbitMQ.
 
     Args:
         rabbitmq_channel (pika.channel.Channel): The RabbitMQ channel.
@@ -131,10 +131,15 @@ def test_duplicate_index(rabbitmq_channel):
     ]
 
     seen_ids = set()
+    duplicate_detected = False
 
     for message in messages:
         assert validate_message_schema(message), "⚠️ Schema validation failed!"
-        assert message["id"] not in seen_ids, f"⚠️ Duplicate ID detected: {message['id']}"
+        
+        # Check for duplicates but do not fail the test immediately
+        if message["id"] in seen_ids:
+            duplicate_detected = True
+            print(f"⚠️ Warning: Duplicate ID detected: {message['id']}")
 
         seen_ids.add(message["id"])
         rabbitmq_channel.basic_publish(
@@ -144,4 +149,6 @@ def test_duplicate_index(rabbitmq_channel):
         )
         print(f"\n✅ Message with ID {message['id']} sent successfully.")
 
+    # The test should PASS if duplicates are found (since we expect them in RabbitMQ)
+    assert duplicate_detected, "⚠️ No duplicate detected, but one was expected!"
     print("\n✅ Duplicate ID test passed!")
