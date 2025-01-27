@@ -1,6 +1,6 @@
 # **PostgreSQL with Testcontainers**
 
-This repository contains a comprehensive series of examples demonstrating how to use Testcontainers with PostgreSQL to test database operations effectively. Each example is self-contained and illustrates a unique testing scenario.
+This repository contains a comprehensive series of examples demonstrating how to use **Testcontainers with PostgreSQL** to test database operations effectively. Each example is self-contained and illustrates a unique testing scenario.
 
 ---
 
@@ -11,9 +11,9 @@ This repository contains a comprehensive series of examples demonstrating how to
 3. [Examples](#examples)
     - [01. Basic CRUD Operations](#01-basic-crud-operations)
     - [02. Indexing and Performance](#02-indexing-and-performance)
-    - [03. Transactions](#03-transactions)
+    - [03. Data Integrity Testing](#03-data-integrity-testing)
     - [04. Aggregation Queries](#04-aggregation-queries)
-    - [05. Schema Validation](#05-schema-validation)
+    - [05. Field Constraints & Index Testing](#05-field-constraints--index-testing)
     - [06. Simulating Failures](#06-simulating-failures)
     - [07. Custom Docker Image](#07-custom-docker-image)
     - [08. Performance Testing](#08-performance-testing)
@@ -25,16 +25,15 @@ This repository contains a comprehensive series of examples demonstrating how to
     - [14. Security Testing](#14-security-testing)
 4. [How to Run Examples](#how-to-run-examples)
 5. [Troubleshooting](#troubleshooting)
-6. [Key Concepts Demonstrated](#key-concepts-demonstrated)
-7. [Best Practices](#best-practices)
-8. [Next Steps](#next-steps)
-9. [Need Help?](#need-help)
+6. [Best Practices](#best-practices)
+7. [Next Steps](#next-steps)
+8. [Need Help?](#need-help)
 
 ---
 
 ## **Overview**
 
-This guide provides step-by-step instructions for using Testcontainers with PostgreSQL to test various scenarios, from basic CRUD operations to advanced use cases like distributed transactions and security testing.
+This guide provides **step-by-step instructions** for using **Testcontainers with PostgreSQL** to test various scenarios, from **basic CRUD operations** to **advanced use cases** like **distributed transactions and security testing**.
 
 ---
 
@@ -53,74 +52,80 @@ Before starting, ensure you have the following:
 
 ## **Examples**
 
-### 01. Basic CRUD Operations
+### **01. Basic CRUD Operations**
 **File**: `postgresql_example/01_basic_crud_operations.py`  
-**Description**: Implements basic Create, Read, Update, and Delete operations in PostgreSQL.  
+**Description**: Implements basic **Create, Read, Update, and Delete (CRUD) operations** in PostgreSQL.  
 **README**: [README.md](01_basic_crud_operations/README.md)
 
-### 02. Indexing and Performance
+### **02. Indexing and Performance**
 **File**: `postgresql_example/02_indexing_and_performance.py`  
-**Description**: Demonstrates how to create and use indexes to optimize query performance.  
+**Description**: Demonstrates how to create and use **indexes** to optimize query performance.  
 **README**: [README.md](02_indexing_and_performance/README.md)
 
-### 03. Transactions
-**File**: `postgresql_example/03_transactions.py`  
-**Description**: Implements PostgreSQL transactions and tests ACID compliance.  
-**README**: [README.md](03_transactions/README.md)
+### **03. Data Integrity Testing** (Updated ✅)
+**File**: `postgresql_example/03_data_integrity_testing.py`  
+**Description**: Ensures that PostgreSQL **enforces data integrity** by testing:  
+- **Unique Constraints**: Prevents duplicate records.  
+- **Transaction Atomicity**: Ensures all-or-nothing execution.  
+- **Foreign Key Constraints**: Prevents orphaned records.  
+**README**: [README.md](03_data_integrity_testing/README.md)
 
-### 04. Aggregation Queries
+### **04. Aggregation Queries**
 **File**: `postgresql_example/04_aggregation_queries.py`  
-**Description**: Demonstrates the use of aggregation functions for data analysis.  
+**Description**: Demonstrates the use of **aggregation functions** for data analysis.  
 **README**: [README.md](04_aggregation_queries/README.md)
 
-### 05. Schema Validation
-**File**: `postgresql_example/05_schema_validation.py`  
-**Description**: Shows how to enforce schema validation in PostgreSQL.  
-**README**: [README.md](05_schema_validation/README.md)
+### **05. Field Constraints & Index Testing** (Updated ✅)
+**File**: `postgresql_example/05_field_constraints_and_indexes.py`  
+**Description**: Tests **PostgreSQL constraints and indexing**:
+- **NOT NULL Constraints**: Ensures required fields cannot be `NULL`.
+- **CHECK Constraints**: Prevents invalid values (e.g., negative ages).
+- **Indexes**: Ensures indexed queries execute efficiently.
+**README**: [README.md](05_field_constraints_and_indexes/README.md)
 
-### 06. Simulating Failures
+### **06. Simulating Failures**
 **File**: `postgresql_example/06_simulating_failures.py`  
-**Description**: Tests resilience by simulating container restarts.  
+**Description**: Tests database **resilience** by simulating **container restarts**.  
 **README**: [README.md](06_simulating_failures/README.md)
 
-### 07. Custom Docker Image
+### **07. Custom Docker Image**
 **File**: `postgresql_example/07_custom_docker_image.py`  
-**Description**: Uses a custom Docker image for PostgreSQL testing.  
+**Description**: Uses a **custom Docker image** for PostgreSQL testing.  
 **README**: [README.md](07_custom_docker_image/README.md)
 
-### 08. Performance Testing
+### **08. Performance Testing**
 **File**: `postgresql_example/08_performance_testing.py`  
-**Description**: Measures performance under high-load scenarios.  
+**Description**: Measures performance under **high-load scenarios**.  
 **README**: [README.md](08_performance_testing/README.md)
 
-### 09. Data Migration Testing
+### **09. Data Migration Testing**
 **File**: `postgresql_example/09_data_migration_testing.py`  
-**Description**: Validates schema and data migrations.  
+**Description**: Validates **schema and data migrations**.  
 **README**: [README.md](09_data_migration_testing/README.md)
 
-### 10. Testing with Multiple Containers
+### **10. Testing with Multiple Containers**
 **File**: `postgresql_example/10_multiple_containers.py`  
-**Description**: Verifies interactions between PostgreSQL and other services.  
+**Description**: Verifies **interactions between PostgreSQL and other services**.  
 **README**: [README.md](10_multiple_containers/README.md)
 
-### 11. Simulating Network Interruptions
+### **11. Simulating Network Interruptions**
 **File**: `postgresql_example/11_simulating_network_interruptions.py`  
-**Description**: Tests resilience during network disruptions.  
+**Description**: Tests resilience during **network disruptions**.  
 **README**: [README.md](11_simulating_network_interruptions/README.md)
 
-### 12. Distributed Transactions
+### **12. Distributed Transactions**
 **File**: `postgresql_example/12_distributed_transactions.py`  
-**Description**: Ensures atomicity across multiple services.  
+**Description**: Ensures **atomicity across multiple services**.  
 **README**: [README.md](12_distributed_transactions/README.md)
 
-### 13. Testing with Mock Services
+### **13. Testing with Mock Services**
 **File**: `postgresql_example/13_testing_with_mock_services.py`  
-**Description**: Simulates external APIs for integration testing.  
+**Description**: Simulates **external APIs for integration testing**.  
 **README**: [README.md](13_testing_with_mock_services/README.md)
 
-### 14. Security Testing
+### **14. Security Testing**
 **File**: `postgresql_example/14_security_testing.py`  
-**Description**: Tests for SQL injection and security vulnerabilities.  
+**Description**: Tests for **SQL injection and security vulnerabilities**.  
 **README**: [README.md](14_security_testing/README.md)
 
 ---
@@ -166,21 +171,11 @@ Before starting, ensure you have the following:
 
 ---
 
-## **Key Concepts Demonstrated**
-
-- Database operations (CRUD)
-- Transaction handling and error recovery
-- Simulating real-world failures
-- Mocking external services
-- Security testing
-
----
-
 ## **Best Practices**
 
-- Clean test environments
-- Comprehensive assertions
-- Realistic testing scenarios
+- **Use Clean Test Environments**: Containers ensure each test runs in an isolated database.
+- **Validate Constraints Early**: Enforce constraints (e.g., `NOT NULL`, `UNIQUE`, `FOREIGN KEY`) during schema design.
+- **Use Indexing Wisely**: Index performance tests help optimize query speeds.
 
 ---
 
@@ -193,7 +188,6 @@ docker logs [container-id]
 
 ---
 
-## Happy Testing! 🚀
+## **🚀 Happy Testing!**
 
 ---
-
