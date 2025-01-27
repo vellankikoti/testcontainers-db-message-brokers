@@ -74,20 +74,7 @@ python3 -m pytest 03_rabbitmq_data_integrity.py -v -s
 
 When you run the test, you should see output similar to the following:
 
-```
-=================================== test session starts ===================================
-...
-Produced: Message 1
-Produced: Message 2
-Produced: Message 3
-
-Consumed: Message 1
-Consumed: Message 2
-Consumed: Message 3
-
-✅ RabbitMQ Data Integrity Test Passed!
-=================================== 1 passed in X seconds =================================
-```
+![image](https://github.com/user-attachments/assets/7d6fb126-ccc8-43ba-ad7d-412b8b4d896a)
 
 ---
 
