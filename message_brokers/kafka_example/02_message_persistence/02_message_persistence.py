@@ -3,20 +3,28 @@
 
 This example verifies that Kafka retains messages even after container restarts.
 """
-
 import time
 import pytest
-from testcontainers.kafka import KafkaContainer
+from testcontainers.core.container import DockerContainer
 from kafka import KafkaProducer, KafkaConsumer
 
 
 @pytest.fixture(scope="module")
 def kafka_container():
     """
-    Starts a Kafka container once per test module.
-    This fixture provides the Kafka container instance.
+    Starts a Kafka container with a persistent volume.
+    This ensures that messages persist across restarts.
     """
-    container = KafkaContainer("confluentinc/cp-kafka:latest")
+    container = DockerContainer("confluentinc/cp-kafka:latest") \
+        .with_env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true") \
+        .with_env("KAFKA_BROKER_ID", "1") \
+        .with_env("KAFKA_LOG_DIRS", "/var/lib/kafka/data") \
+        .with_volume_mapping("/tmp/kafka-data", "/var/lib/kafka/data") \
+        .with_exposed_ports(9092, 9093) \
+        .with_command(
+            "bash -c 'echo Waiting for Kafka to be ready... && sleep 10 && /etc/confluent/docker/run'"
+        )
+
     container.start()
     yield container
     container.stop()
@@ -27,7 +35,7 @@ def kafka_bootstrap_server(kafka_container):
     """
     Provides the Kafka bootstrap server URL for each test function.
     """
-    return kafka_container.get_bootstrap_server()
+    return f"localhost:{kafka_container.get_exposed_port(9092)}"
 
 
 def test_kafka_message_persistence(kafka_container, kafka_bootstrap_server):
@@ -48,7 +56,7 @@ def test_kafka_message_persistence(kafka_container, kafka_bootstrap_server):
 
     # Step 3: Restart Kafka (Simulate recovery)
     kafka_container.start()
-    new_bootstrap_server = kafka_container.get_bootstrap_server()
+    new_bootstrap_server = f"localhost:{kafka_container.get_exposed_port(9092)}"
 
     # Step 4: Consume messages after restart
     consumer = KafkaConsumer(
