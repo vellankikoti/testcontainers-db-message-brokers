@@ -1,5 +1,5 @@
 """
-conftest.py - Shared fixtures for MongoDB example
+conftest.py - Shared fixtures for MongoDB resilience testing.
 """
 
 import pytest
@@ -10,22 +10,22 @@ from pymongo import MongoClient
 def mongodb_container():
     """Start a MongoDB container and provide the connection URL."""
     with MongoDbContainer("mongo:6.0") as mongo:
-        yield mongo.get_connection_url()
+        yield mongo
 
 @pytest.fixture(scope="module")
 def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
-    client = MongoClient(mongodb_container)
+    client = MongoClient(mongodb_container.get_connection_url())
     yield client
     client.close()
 
 @pytest.fixture(scope="module")
 def test_collection(mongodb_client):
-    """Set up the 'test_data' collection in the MongoDB database."""
+    """Set up a dedicated test collection for resilience testing."""
     db = mongodb_client.get_database("test_db")
-    collection = db.get_collection("test_data")
-    # Ensure the collection is empty before starting tests
+    collection = db.get_collection("resilience_test")
+
+    # Cleanup before and after tests
     collection.delete_many({})
     yield collection
-    # Clean up after tests
     collection.delete_many({})
