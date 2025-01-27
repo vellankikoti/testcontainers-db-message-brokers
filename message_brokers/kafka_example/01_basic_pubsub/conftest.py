@@ -1,5 +1,5 @@
 """
-conftest.py - Shared Kafka fixture using Testcontainers (NO docker-compose).
+conftest.py - Shared Kafka fixture using Testcontainers.
 """
 
 import pytest
@@ -11,28 +11,28 @@ from testcontainers.core.container import DockerContainer
 @pytest.fixture(scope="session")
 def zookeeper_container():
     """Starts Zookeeper using Testcontainers."""
-    with DockerContainer("confluentinc/cp-zookeeper:latest").with_env(
-        "ZOOKEEPER_CLIENT_PORT", "2181"
-    ) as zookeeper:
+    with DockerContainer("confluentinc/cp-zookeeper:latest") as zookeeper:
+        zookeeper.with_env("ZOOKEEPER_CLIENT_PORT", "2181")
+        zookeeper.with_exposed_ports(2181)
         zookeeper.start()
-        yield zookeeper.get_container_host_ip() + ":2181"
+        yield f"localhost:{zookeeper.get_exposed_port(2181)}"
 
 
 @pytest.fixture(scope="session")
 def kafka_container(zookeeper_container):
-    """Starts Kafka using Testcontainers."""
+    """Starts Kafka using Testcontainers and ensures it's ready."""
     with DockerContainer("confluentinc/cp-kafka:latest") as kafka:
         kafka.with_env("KAFKA_BROKER_ID", "1")
         kafka.with_env("KAFKA_ZOOKEEPER_CONNECT", zookeeper_container)
-        kafka.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
         kafka.with_env("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
+        kafka.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
         kafka.with_env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
         kafka.with_exposed_ports(9092)
 
         kafka.start()
 
         # ✅ Wait until Kafka is fully ready
-        bootstrap_server = "localhost:9092"
+        bootstrap_server = f"localhost:{kafka.get_exposed_port(9092)}"
         max_wait_time = 30  # Max wait time in seconds
         start_time = time.time()
 
@@ -41,7 +41,7 @@ def kafka_container(zookeeper_container):
                 admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_server)
                 topics = admin_client.list_topics()
                 if topics is not None:
-                    break  # Kafka is ready
+                    break  # ✅ Kafka is ready!
             except Exception:
                 time.sleep(2)  # Retry every 2 seconds
 
