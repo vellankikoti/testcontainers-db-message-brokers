@@ -10,7 +10,9 @@ from pymongo import MongoClient
 @pytest.fixture(scope="module")
 def mongodb_container():
     """Start a MongoDB container with persistent storage."""
-    with MongoDbContainer("mongo:6.0").with_bind_ports(27017, 27017) as mongo:
+    with MongoDbContainer("mongo:6.0") \
+            .with_bind_ports(27017, 27017) \
+            .with_volume_mapping("/data/db", "/data/db") as mongo:
         print("🚀 Starting MongoDB container with persistent storage...")
         time.sleep(3)  # Ensures MongoDB initializes properly
         yield mongo  # ✅ Returning full container instance
