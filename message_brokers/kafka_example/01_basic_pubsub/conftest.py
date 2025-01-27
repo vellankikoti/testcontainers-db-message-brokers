@@ -1,20 +1,38 @@
 """
-conftest.py - Shared Kafka fixture for Testcontainers.
+conftest.py - Shared Kafka fixture using Testcontainers (NO docker-compose).
 """
 
 import pytest
 import time
 from kafka import KafkaAdminClient, KafkaProducer, KafkaConsumer
-from testcontainers.kafka import KafkaContainer
+from testcontainers.core.container import DockerContainer
 
 
 @pytest.fixture(scope="session")
-def kafka_container():
-    """Starts a Kafka container using Testcontainers and ensures it's ready."""
-    with KafkaContainer("confluentinc/cp-kafka:latest") as kafka:
-        bootstrap_server = kafka.get_bootstrap_server()
+def zookeeper_container():
+    """Starts Zookeeper using Testcontainers."""
+    with DockerContainer("confluentinc/cp-zookeeper:latest").with_env(
+        "ZOOKEEPER_CLIENT_PORT", "2181"
+    ) as zookeeper:
+        zookeeper.start()
+        yield zookeeper.get_container_host_ip() + ":2181"
 
-        # ✅ Wait until Kafka is fully available
+
+@pytest.fixture(scope="session")
+def kafka_container(zookeeper_container):
+    """Starts Kafka using Testcontainers."""
+    with DockerContainer("confluentinc/cp-kafka:latest") as kafka:
+        kafka.with_env("KAFKA_BROKER_ID", "1")
+        kafka.with_env("KAFKA_ZOOKEEPER_CONNECT", zookeeper_container)
+        kafka.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
+        kafka.with_env("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
+        kafka.with_env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
+        kafka.with_exposed_ports(9092)
+
+        kafka.start()
+
+        # ✅ Wait until Kafka is fully ready
+        bootstrap_server = "localhost:9092"
         max_wait_time = 30  # Max wait time in seconds
         start_time = time.time()
 
@@ -27,7 +45,7 @@ def kafka_container():
             except Exception:
                 time.sleep(2)  # Retry every 2 seconds
 
-        yield bootstrap_server  # Return Kafka connection string
+        yield bootstrap_server
 
 
 @pytest.fixture
