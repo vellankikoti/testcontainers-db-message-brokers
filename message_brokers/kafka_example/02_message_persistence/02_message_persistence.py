@@ -5,27 +5,20 @@ This example verifies that Kafka retains messages even after container restarts.
 """
 import time
 import pytest
-from testcontainers.core.container import DockerContainer
+from testcontainers.kafka import KafkaContainer
 from kafka import KafkaProducer, KafkaConsumer
+from kafka.errors import KafkaError
 
 
 @pytest.fixture(scope="module")
 def kafka_container():
     """
     Starts a Kafka container with a persistent volume.
-    This ensures that messages persist across restarts.
+    Ensures messages persist across restarts.
     """
-    container = DockerContainer("confluentinc/cp-kafka:latest") \
-        .with_env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true") \
-        .with_env("KAFKA_BROKER_ID", "1") \
-        .with_env("KAFKA_LOG_DIRS", "/var/lib/kafka/data") \
-        .with_volume_mapping("/tmp/kafka-data", "/var/lib/kafka/data") \
-        .with_exposed_ports(9092, 9093) \
-        .with_command(
-            "bash -c 'echo Waiting for Kafka to be ready... && sleep 10 && /etc/confluent/docker/run'"
-        )
-
+    container = KafkaContainer("confluentinc/cp-kafka:latest")
     container.start()
+    wait_for_kafka(container.get_bootstrap_server())  # Ensure Kafka is ready
     yield container
     container.stop()
 
@@ -35,7 +28,21 @@ def kafka_bootstrap_server(kafka_container):
     """
     Provides the Kafka bootstrap server URL for each test function.
     """
-    return f"localhost:{kafka_container.get_exposed_port(9092)}"
+    return kafka_container.get_bootstrap_server()
+
+
+def wait_for_kafka(bootstrap_server, timeout=30):
+    """
+    Waits for Kafka to be fully ready by attempting to create a producer.
+    """
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            producer = KafkaProducer(bootstrap_servers=bootstrap_server)
+            producer.close()
+            return
+        except KafkaError:
+            time.sleep(2)  # Retry after 2 seconds
 
 
 def test_kafka_message_persistence(kafka_container, kafka_bootstrap_server):
@@ -56,7 +63,8 @@ def test_kafka_message_persistence(kafka_container, kafka_bootstrap_server):
 
     # Step 3: Restart Kafka (Simulate recovery)
     kafka_container.start()
-    new_bootstrap_server = f"localhost:{kafka_container.get_exposed_port(9092)}"
+    new_bootstrap_server = kafka_container.get_bootstrap_server()
+    wait_for_kafka(new_bootstrap_server)  # Ensure Kafka is fully ready after restart
 
     # Step 4: Consume messages after restart
     consumer = KafkaConsumer(
