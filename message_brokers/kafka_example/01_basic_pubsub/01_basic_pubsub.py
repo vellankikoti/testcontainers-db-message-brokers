@@ -7,6 +7,14 @@ This example tests message publishing, consuming, and various messaging scenario
 import pytest
 import time
 from kafka import KafkaProducer, KafkaConsumer
+from testcontainers.kafka import KafkaContainer
+
+
+@pytest.fixture(scope="module")
+def kafka_container():
+    """Starts a Kafka container using Testcontainers."""
+    with KafkaContainer() as kafka:
+        yield kafka.get_bootstrap_server()
 
 
 @pytest.fixture
@@ -44,15 +52,14 @@ def test_kafka_pub_sub(kafka_producer, kafka_consumer):
 
     time.sleep(2)  # Allow time for message propagation
 
-    for message in kafka_consumer:
-        assert message.value == test_message, "❌ Kafka message mismatch!"
-        break  # Exit after first message
+    received_messages = [message.value for message in kafka_consumer]
+    assert test_message in received_messages, "❌ Kafka message was not received!"
 
 
 def test_kafka_multiple_messages(kafka_producer, kafka_consumer):
     """Test that multiple messages published to Kafka are received correctly."""
     messages = [f"Message {i}" for i in range(1, 6)]
-    
+
     for msg in messages:
         kafka_producer.send("test_topic", msg)
     kafka_producer.flush()
