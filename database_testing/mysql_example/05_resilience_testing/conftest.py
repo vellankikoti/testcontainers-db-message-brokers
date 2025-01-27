@@ -15,29 +15,30 @@ MYSQL_DATABASE = "testdb"
 
 @pytest.fixture(scope="module")
 def mysql_container():
-    """Start a MySQL container using Testcontainers with correct user permissions."""
+    """Start a MySQL container using Testcontainers with proper authentication settings."""
     mysql = MySqlContainer("mysql:8.0") \
         .with_env("MYSQL_ROOT_PASSWORD", MYSQL_ROOT_PASSWORD) \
         .with_env("MYSQL_DATABASE", MYSQL_DATABASE) \
-        .with_command("--default-authentication-plugin=mysql_native_password")  # ✅ Fixes PyMySQL login issue
+        .with_command("--default-authentication-plugin=mysql_native_password")  # ✅ Fix PyMySQL issues
 
     print("🚀 Starting MySQL container...")
     mysql.start()
-    time.sleep(15)  # ✅ Ensures MySQL is fully initialized
+    time.sleep(15)  # ✅ Ensure MySQL is fully initialized
 
-    # Explicitly create `testuser` and grant permissions
-    print("🔧 Configuring MySQL users...")
+    # Get MySQL host & port
     host = mysql.get_container_host_ip()
-    port = int(mysql.get_exposed_port(3306))  # ✅ Convert port to int
+    port = int(mysql.get_exposed_port(3306))  # ✅ Ensure port is an integer
 
-    # **First connection using ROOT**
-    for attempt in range(10):  # ✅ Retry connecting to root
+    print("🔧 Configuring MySQL users...")
+
+    # ✅ **First connection using ROOT**
+    for attempt in range(10):
         try:
             root_conn = pymysql.connect(
                 host=host,
                 user="root",
                 password=MYSQL_ROOT_PASSWORD,
-                database="mysql",  # ✅ Connect to default `mysql` database
+                database="mysql",
                 port=port,
                 cursorclass=pymysql.cursors.DictCursor,
             )
@@ -49,11 +50,11 @@ def mysql_container():
     else:
         pytest.fail("❌ MySQL root connection failed!")
 
+    # **Create User & Grant Permissions**
     cursor = root_conn.cursor()
-    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {MYSQL_DATABASE};")  # ✅ Ensure database exists
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {MYSQL_DATABASE};")
     cursor.execute(f"CREATE USER IF NOT EXISTS '{MYSQL_USER}'@'%' IDENTIFIED WITH mysql_native_password BY '{MYSQL_PASSWORD}';")
     cursor.execute(f"GRANT ALL PRIVILEGES ON {MYSQL_DATABASE}.* TO '{MYSQL_USER}'@'%';")
-    cursor.execute("ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'rootpassword';")  # ✅ Fixes root access issues
     cursor.execute("FLUSH PRIVILEGES;")
     root_conn.commit()
     cursor.close()
@@ -61,7 +62,7 @@ def mysql_container():
 
     print("✅ MySQL user and permissions setup completed.")
 
-    yield mysql
+    yield mysql  # Pass the container to the test
 
     print("🛑 Stopping MySQL container...")
     mysql.stop()
@@ -71,7 +72,7 @@ def mysql_container():
 def mysql_client(mysql_container):
     """Create a fresh MySQL connection after container restart."""
     host = mysql_container.get_container_host_ip()
-    port = int(mysql_container.get_exposed_port(3306))  # ✅ Convert port to int
+    port = int(mysql_container.get_exposed_port(3306))  # ✅ Ensure port is an integer
 
     for attempt in range(10):  # ✅ Retry logic for connecting to MySQL
         try:
