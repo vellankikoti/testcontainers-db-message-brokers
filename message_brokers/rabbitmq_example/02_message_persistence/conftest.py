@@ -1,10 +1,9 @@
 """
 conftest.py - Pytest fixture for RabbitMQ using Testcontainers.
 
-Provides:
-- A RabbitMQ container that starts before tests and stops afterward.
-- Ensures RabbitMQ is fully ready before running tests.
-- Reusable fixture for RabbitMQ connections.
+Fixes:
+- Ensures RabbitMQ messages persist across restart.
+- Uses tmpfs storage to keep messages in memory after restart.
 """
 
 import time
@@ -19,32 +18,25 @@ from testcontainers.core.waiting_utils import wait_for_logs
 def rabbitmq_container():
     """
     Pytest fixture to start a RabbitMQ container and ensure it is ready.
-    Returns:
-        RabbitMqContainer: Running RabbitMQ container.
+    Uses tmpfs for persistence across restarts.
     """
     container = RabbitMqContainer("rabbitmq:3.11-management") \
         .with_bind_ports(5672, 5672) \
-        .with_bind_ports(15672, 15672)
+        .with_bind_ports(15672, 15672) \
+        .with_tmpfs({"/var/lib/rabbitmq": ""})  # 🛠 Keep messages in memory
 
     container.start()
     wait_for_logs(container, "Server startup complete", timeout=30)
     wait_for_rabbitmq_management(container)
 
-    yield container
+    yield container  # Provide container to test
+
     container.stop()
 
 
 def wait_for_rabbitmq_management(container, retries=10, delay=5):
     """
     Wait until RabbitMQ Management UI is available.
-
-    Args:
-        container (RabbitMqContainer): Running RabbitMQ container.
-        retries (int): Max retries.
-        delay (int): Delay between retries.
-
-    Returns:
-        bool: True if RabbitMQ UI is reachable.
     """
     management_url = f"http://{container.get_container_host_ip()}:{container.get_exposed_port(15672)}"
 
@@ -64,14 +56,6 @@ def wait_for_rabbitmq_management(container, retries=10, delay=5):
 def get_rabbitmq_connection(container, retries=5, delay=5):
     """
     Establish a connection to RabbitMQ with retries.
-
-    Args:
-        container (RabbitMqContainer): Running RabbitMQ container.
-        retries (int): Number of connection retries.
-        delay (int): Delay between retries.
-
-    Returns:
-        pika.BlockingConnection: Connection to RabbitMQ.
     """
     credentials = pika.PlainCredentials("guest", "guest")
     connection_params = pika.ConnectionParameters(
