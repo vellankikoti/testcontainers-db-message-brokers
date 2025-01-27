@@ -8,14 +8,14 @@ from pymongo import MongoClient
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container and provide the connection URL."""
+    """Start a MongoDB container and return the container object."""
     with MongoDbContainer("mongo:6.0") as mongo:
-        yield mongo
+        yield mongo  # ✅ Return full container object (not just URL)
 
 @pytest.fixture(scope="module")
 def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
-    client = MongoClient(mongodb_container.get_connection_url())
+    client = MongoClient(mongodb_container.get_connection_url())  # ✅ Correct usage of connection URL
     yield client
     client.close()
 
