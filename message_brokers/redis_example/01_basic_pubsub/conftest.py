@@ -9,6 +9,7 @@ This file provides:
 import pytest
 from testcontainers.redis import RedisContainer
 import redis
+import time
 
 @pytest.fixture(scope="module")
 def redis_container():
@@ -32,6 +33,7 @@ def redis_client(redis_container):
 
     - Retrieves the container's IP and exposed port.
     - Creates a Redis client instance.
+    - Ensures Redis is ready before returning the client.
     - Closes the connection automatically after tests.
 
     Returns:
@@ -42,5 +44,18 @@ def redis_client(redis_container):
         port=redis_container.get_exposed_port(6379),
         decode_responses=True  # Ensure messages are received as strings
     )
+
+    # ✅ Explicitly wait until Redis is ready
+    for _ in range(10):  # Retry for up to 10 seconds
+        try:
+            if client.ping():  # Redis responds when fully ready
+                print("✅ Redis is ready!")
+                break
+        except redis.exceptions.ConnectionError:
+            print("⏳ Waiting for Redis to be ready...")
+            time.sleep(1)
+    else:
+        raise RuntimeError("❌ Redis did not start in time!")
+
     yield client
     client.close()
