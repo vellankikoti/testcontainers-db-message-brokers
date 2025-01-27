@@ -3,7 +3,7 @@
 
 Fixes:
 - Ensures messages persist across RabbitMQ restart.
-- Uses tmpfs to keep RabbitMQ state during restart.
+- Uses volume mapping instead of `with_tmpfs()` (fix for RabbitMqContainer issue).
 """
 
 import time
