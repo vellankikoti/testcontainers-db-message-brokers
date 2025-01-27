@@ -19,23 +19,22 @@ def kafka_bootstrap_server():
         yield kafka.get_bootstrap_server()
 
 
-def test_basic_pubsub(kafka_bootstrap_server):
+def test_basic_pubsub_single_message(kafka_bootstrap_server):
     """
-    Tests basic Kafka publish-subscribe functionality.
+    Tests basic Kafka publish-subscribe functionality for a single message.
     """
-    # Kafka topic name
     topic = "test_topic"
 
-    # Produce a message to the Kafka topic
+    # Produce a single message
     producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server)
     producer.send(topic, b"Hello, Kafka!")
     producer.flush()
     producer.close()
 
-    # Allow some time for the message to be available
+    # Allow time for the message to be available
     time.sleep(2)
 
-    # Consume the message from the Kafka topic
+    # Consume the message
     consumer = KafkaConsumer(
         topic,
         bootstrap_servers=kafka_bootstrap_server,
@@ -45,5 +44,39 @@ def test_basic_pubsub(kafka_bootstrap_server):
     message = next(consumer)
     consumer.close()
 
-    # Assert that the message received matches the sent message
+    # Assert that the received message matches the sent message
     assert message.value == b"Hello, Kafka!"
+
+
+def test_basic_pubsub_multiple_messages(kafka_bootstrap_server):
+    """
+    Tests Kafka publish-subscribe functionality for multiple messages.
+    """
+    topic = "test_topic_multi"
+
+    # Messages to send
+    messages_to_send = [b"Message 1", b"Message 2", b"Message 3"]
+
+    # Produce multiple messages
+    producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server)
+    for msg in messages_to_send:
+        producer.send(topic, msg)
+    producer.flush()
+    producer.close()
+
+    # Allow time for messages to be available
+    time.sleep(2)
+
+    # Consume messages
+    consumer = KafkaConsumer(
+        topic,
+        bootstrap_servers=kafka_bootstrap_server,
+        auto_offset_reset="earliest",
+        group_id="test-group-multi",
+    )
+
+    received_messages = [msg.value for msg in consumer]
+    consumer.close()
+
+    # Assert that all sent messages are received
+    assert received_messages == messages_to_send
