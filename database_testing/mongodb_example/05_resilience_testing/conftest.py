@@ -4,27 +4,34 @@ conftest.py - Shared fixtures for MongoDB resilience testing.
 
 import pytest
 import time
-from testcontainers.core.container import DockerContainer
+import docker
 from pymongo import MongoClient
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with a fixed name to persist across restarts."""
-    mongo = DockerContainer("mongo:6.0") \
-        .with_bind_ports(27017, 27017) \
-        .with_name("mongodb-testcontainer")  # Ensure the same container is reused
+    """Start a MongoDB container with a fixed lifecycle using Docker API."""
+    client = docker.from_env()
+    container = client.containers.run(
+        "mongo:6.0",
+        name="mongodb-testcontainer",
+        ports={"27017/tcp": 27017},
+        detach=True,
+        remove=False,  # Don't auto-remove container
+    )
 
     print("🚀 Starting MongoDB container...")
-    mongo.start()
     time.sleep(5)  # Ensure MongoDB initializes properly
-    yield mongo  # Provide container instance for tests
+
+    yield container
+
     print("🛑 Stopping MongoDB container...")
-    mongo.stop()
+    container.stop()
 
 @pytest.fixture(scope="function")
 def mongodb_client():
     """Create a fresh MongoDB client connection after container restart."""
     mongo_url = "mongodb://localhost:27017"
+    
     for _ in range(10):
         try:
             client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
