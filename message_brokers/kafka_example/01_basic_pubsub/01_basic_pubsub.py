@@ -6,41 +6,36 @@ This example tests message publishing, consuming, and various messaging scenario
 
 import pytest
 import time
-from kafka import KafkaProducer, KafkaConsumer
-from testcontainers.kafka import KafkaContainer
+from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
 from kafka.errors import KafkaError
+from testcontainers.kafka import KafkaContainer
 
 
 @pytest.fixture(scope="module")
 def kafka_container():
-    """Starts a Kafka container using Testcontainers."""
+    """Starts a Kafka container using Testcontainers with proper configuration."""
     with KafkaContainer("confluentinc/cp-kafka:7.6.0") as kafka:
         kafka.with_env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
         kafka.with_env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
         kafka.with_env("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
         kafka.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
-        kafka.with_env("KAFKA_ZOOKEEPER_CONNECT", "localhost:2181")
 
         kafka.with_exposed_ports(9092)
-        kafka.with_network_mode("bridge")
+        kafka.with_network("bridge")  # Correct method name
 
         kafka.start()
 
-        # Wait for Kafka readiness
-        max_wait = 40
+        # **Wait for Kafka to be ready**
+        max_wait = 40  # Maximum wait time in seconds
         start_time = time.time()
         while time.time() - start_time < max_wait:
             try:
-                consumer = KafkaConsumer(
-                    "test_topic",
-                    bootstrap_servers=kafka.get_bootstrap_server(),
-                    auto_offset_reset="earliest",
-                    enable_auto_commit=True
-                )
-                consumer.close()
-                break  # Kafka is ready!
+                admin_client = KafkaAdminClient(bootstrap_servers=kafka.get_bootstrap_server())
+                topics = admin_client.list_topics()
+                if topics is not None:  # Kafka is ready
+                    break
             except KafkaError:
-                time.sleep(2)
+                time.sleep(2)  # Retry every 2 seconds
 
         yield kafka.get_bootstrap_server()
 
