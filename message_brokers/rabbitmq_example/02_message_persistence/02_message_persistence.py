@@ -16,11 +16,36 @@ def rabbitmq_container():
     Pytest fixture to start a RabbitMQ container.
 
     Returns:
-        dict: RabbitMQ connection parameters.
+        RabbitMqContainer: Running RabbitMQ container instance.
     """
     with RabbitMqContainer("rabbitmq:3.9-management") as rabbitmq:
-        rabbitmq.start()  # Ensure container is started
-        yield rabbitmq.get_connection_params()
+        rabbitmq.start()
+        time.sleep(5)  # Ensure RabbitMQ is fully up before returning
+        yield rabbitmq
+
+
+def get_rabbitmq_connection(container):
+    """
+    Establish a connection to RabbitMQ using `pika`.
+
+    Args:
+        container (RabbitMqContainer): Running RabbitMQ container.
+
+    Returns:
+        pika.BlockingConnection: Connection to RabbitMQ.
+    """
+    params = container.get_connection_params()
+    credentials = pika.PlainCredentials(params.username, params.password)
+
+    connection_params = pika.ConnectionParameters(
+        host=params.host,
+        port=params.port,
+        virtual_host="/",
+        credentials=credentials,
+        heartbeat=600,  # Prevents premature disconnects
+        blocked_connection_timeout=300,
+    )
+    return pika.BlockingConnection(connection_params)
 
 
 def test_rabbitmq_message_persistence(rabbitmq_container):
@@ -41,14 +66,7 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
     # Step 1: Publish messages to RabbitMQ before restart
     print("\nPublishing persistent messages to RabbitMQ...")
 
-    # Establish connection
-    connection_params = pika.ConnectionParameters(
-        host=rabbitmq_container["host"],
-        port=rabbitmq_container["port"],
-        credentials=pika.PlainCredentials(rabbitmq_container["username"], rabbitmq_container["password"])
-    )
-
-    connection = pika.BlockingConnection(connection_params)
+    connection = get_rabbitmq_connection(rabbitmq_container)
     channel = connection.channel()
 
     # Declare a durable queue
@@ -57,29 +75,28 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
     # Publish persistent messages
     persistent_message = "Persistent Message"
     channel.basic_publish(
-        exchange='',
+        exchange="",
         routing_key=queue_name,
         body=persistent_message,
-        properties=pika.BasicProperties(delivery_mode=2)  # Persistent message
+        properties=pika.BasicProperties(delivery_mode=2),  # Persistent message
     )
     connection.close()
     print("✅ Message successfully published!")
 
     # Step 2: Stop and restart RabbitMQ
     print("\nStopping RabbitMQ container...")
-    time.sleep(3)  # Ensure messages are written before stopping
-    rabbitmq_container["container"].stop()
+    rabbitmq_container.stop()
     time.sleep(5)  # Simulate downtime
     print("RabbitMQ container stopped.")
 
     print("\nRestarting RabbitMQ container...")
-    rabbitmq_container["container"].start()
-    time.sleep(5)  # Allow RabbitMQ to restart
+    rabbitmq_container.start()
+    time.sleep(5)  # Ensure RabbitMQ is up
     print("RabbitMQ container restarted successfully!")
 
     # Step 3: Consume messages after restart
     print("\nConsuming messages from RabbitMQ after restart...")
-    connection = pika.BlockingConnection(connection_params)
+    connection = get_rabbitmq_connection(rabbitmq_container)
     channel = connection.channel()
 
     # Declare the durable queue again
