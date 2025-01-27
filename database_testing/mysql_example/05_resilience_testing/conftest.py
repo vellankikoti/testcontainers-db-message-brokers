@@ -7,10 +7,10 @@ import time
 from testcontainers.mysql import MySqlContainer
 import pymysql
 
+# MySQL Configuration
 MYSQL_USER = "testuser"
 MYSQL_PASSWORD = "testpassword"
 MYSQL_DATABASE = "testdb"
-
 
 @pytest.fixture(scope="module")
 def mysql_container():
@@ -51,7 +51,6 @@ def mysql_client(mysql_container):
             time.sleep(2)
 
     pytest.fail("❌ MySQL did not start within the expected time!")
-
 
 @pytest.fixture(scope="function")
 def test_table(mysql_client):
