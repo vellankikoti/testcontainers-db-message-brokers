@@ -72,18 +72,9 @@ python -m pytest 05_field_constraints_and_indexes.py -v -s
 ## **Expected Output**
 When you run the test, you should see output similar to this:
 
-```plaintext
-Producing valid messages to Kafka...
-✅ Valid messages successfully produced!
+![image](https://github.com/user-attachments/assets/8473e316-9b28-4fa9-af5b-f67e9c6957ad)
 
-Producing invalid messages to Kafka...
-❌ Invalid message rejected as expected!
-
-Consuming messages from Kafka...
-
-Validating message order and uniqueness...
-✅ Kafka data integrity validation PASSED! 🎉
-```
+---
 
 If the test fails, possible errors might be:
 - **Schema Enforcement Failed** (Invalid message was published).
