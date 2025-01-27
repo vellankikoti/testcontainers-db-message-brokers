@@ -9,16 +9,17 @@ from pymongo import MongoClient
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with a fixed lifecycle."""
-    with DockerContainer("mongo:6.0") as mongo:
-        mongo.with_bind_ports(27017, 27017)  # Explicitly map MongoDB port
-        mongo.with_env("MONGO_INITDB_DATABASE", "test_db")  # Ensure default DB
-        print("🚀 Starting MongoDB container...")
-        mongo.start()
-        time.sleep(5)  # Ensure MongoDB initializes properly
-        yield mongo
-        print("🛑 Stopping MongoDB container...")
-        mongo.stop()
+    """Start a MongoDB container with a fixed name to persist across restarts."""
+    mongo = DockerContainer("mongo:6.0") \
+        .with_bind_ports(27017, 27017) \
+        .with_name("mongodb-testcontainer")  # Ensure the same container is reused
+
+    print("🚀 Starting MongoDB container...")
+    mongo.start()
+    time.sleep(5)  # Ensure MongoDB initializes properly
+    yield mongo  # Provide container instance for tests
+    print("🛑 Stopping MongoDB container...")
+    mongo.stop()
 
 @pytest.fixture(scope="function")
 def mongodb_client():
