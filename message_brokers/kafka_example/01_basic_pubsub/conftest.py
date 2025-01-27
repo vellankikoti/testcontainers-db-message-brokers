@@ -5,37 +5,23 @@ conftest.py - Shared Kafka fixture using Testcontainers.
 import pytest
 from testcontainers.kafka import KafkaContainer
 
-@pytest.fixture(scope="module")
+
+@pytest.fixture(scope="session")
 def kafka_container():
-    """Starts a Kafka container and provides the bootstrap server URL."""
+    """
+    Starts a Kafka container once per test session.
+    This avoids restarting the container multiple times, making tests faster.
+    """
     with KafkaContainer("confluentinc/cp-kafka:latest") as kafka:
-        yield kafka.get_bootstrap_server()
+        yield kafka
 
 
-# File: 01_basic_pubsub.py
+@pytest.fixture(scope="function")
+def kafka_bootstrap_server(kafka_container):
+    """
+    Provides the Kafka bootstrap server URL for each test function.
+    Ensures a fresh session without restarting the container.
+    """
+    return kafka_container.get_bootstrap_server()
 
-from kafka import KafkaProducer, KafkaConsumer
-import time
-import pytest
-
-def test_basic_pubsub(kafka_container):
-    """Tests basic Kafka publish-subscribe using Testcontainers."""
-    topic = "test_topic"
-    message = b"Hello, Kafka!"
     
-    # Kafka Producer
-    producer = KafkaProducer(bootstrap_servers=kafka_container)
-    producer.send(topic, message)
-    producer.flush()
-    
-    # Kafka Consumer
-    consumer = KafkaConsumer(
-        topic, 
-        bootstrap_servers=kafka_container, 
-        auto_offset_reset="earliest",
-        enable_auto_commit=True,
-        consumer_timeout_ms=5000  # Timeout in case no message is received
-    )
-    
-    received_message = next(consumer)
-    assert received_message.value == message, "Kafka message mismatch!"
