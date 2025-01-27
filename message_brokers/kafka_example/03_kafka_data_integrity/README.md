@@ -74,15 +74,7 @@ python3 -m pytest 03_kafka_data_integrity.py -v -s
 
 When you run the test, you should see output similar to the following:
 
-```bash
-Producing messages to Kafka...
-✅ Messages successfully produced!
-
-Consuming messages from Kafka...
-
-Validating message integrity...
-✅ Kafka data integrity validation PASSED! 🎉
-```
+![image](https://github.com/user-attachments/assets/aff5fabc-3ca2-4d3e-b3a0-273f6d413d50)
 
 ---
 
