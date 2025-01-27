@@ -1,11 +1,7 @@
 """
-01_basic_pubsub.py - Kafka Pub/Sub testing with Testcontainers.
+01_basic_pubsub.py - Demonstrates basic Kafka Pub/Sub with Testcontainers.
 
-This test verifies:
-1. ✅ Basic message publishing and subscribing.
-2. ✅ Handling of multiple messages.
-3. ✅ Ensuring Kafka does not duplicate messages.
-4. ✅ Kafka's ability to replay messages from the beginning.
+This example tests message publishing, consuming, and various messaging scenarios in Kafka.
 """
 
 import pytest
@@ -13,19 +9,19 @@ import time
 
 
 def test_kafka_pub_sub(kafka_producer, kafka_consumer):
-    """✅ Test that a message published to Kafka is received by a consumer."""
+    """Test that a message published to Kafka is received by a consumer."""
     test_message = "Hello, Kafka!"
     kafka_producer.send("test_topic", test_message)
     kafka_producer.flush()
 
-    time.sleep(2)  # Allow message propagation
+    time.sleep(2)  # Allow time for message propagation
 
     received_messages = [message.value for message in kafka_consumer]
     assert test_message in received_messages, "❌ Kafka message was not received!"
 
 
 def test_kafka_multiple_messages(kafka_producer, kafka_consumer):
-    """✅ Test that multiple messages published to Kafka are received correctly."""
+    """Test that multiple messages published to Kafka are received correctly."""
     messages = [f"Message {i}" for i in range(1, 6)]
 
     for msg in messages:
@@ -39,7 +35,7 @@ def test_kafka_multiple_messages(kafka_producer, kafka_consumer):
 
 
 def test_kafka_message_duplication(kafka_producer, kafka_consumer):
-    """✅ Ensure Kafka does not duplicate messages during normal operation."""
+    """Ensure Kafka does not duplicate messages during normal operation."""
     unique_message = "Unique Kafka Message"
     kafka_producer.send("test_topic", unique_message)
     kafka_producer.send("test_topic", unique_message)
@@ -52,7 +48,7 @@ def test_kafka_message_duplication(kafka_producer, kafka_consumer):
 
 
 def test_kafka_replay_messages(kafka_producer, kafka_container):
-    """✅ Ensure Kafka can replay messages from the beginning."""
+    """Ensure Kafka can replay messages from the beginning."""
     topic = "test_topic_replay"
     test_messages = ["Replay 1", "Replay 2", "Replay 3"]
 
@@ -63,6 +59,8 @@ def test_kafka_replay_messages(kafka_producer, kafka_container):
     time.sleep(2)
 
     # Create a new consumer to replay messages
+    from kafka import KafkaConsumer
+
     consumer = KafkaConsumer(
         topic,
         bootstrap_servers=kafka_container,
