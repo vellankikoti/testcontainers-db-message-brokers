@@ -9,7 +9,7 @@ from pymongo import MongoClient
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container with proper lifecycle management."""
+    """Start a MongoDB container with a fixed lifecycle."""
     with DockerContainer("mongo:6.0") as mongo:
         mongo.with_bind_ports(27017, 27017)  # Explicitly map MongoDB port
         mongo.with_env("MONGO_INITDB_DATABASE", "test_db")  # Ensure default DB
@@ -23,7 +23,7 @@ def mongodb_container():
 @pytest.fixture(scope="function")
 def mongodb_client():
     """Create a fresh MongoDB client connection after container restart."""
-    mongo_url = "mongodb://localhost:27017"  # Use fixed localhost connection
+    mongo_url = "mongodb://localhost:27017"
     for _ in range(10):
         try:
             client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
