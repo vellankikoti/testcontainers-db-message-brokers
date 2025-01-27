@@ -30,7 +30,7 @@ def mysql_container():
         user="root",
         password=MYSQL_ROOT_PASSWORD,
         database=MYSQL_DATABASE,
-        port=mysql.get_exposed_port(3306),
+        port=int(mysql.get_exposed_port(3306)),  # ✅ Ensure port is an integer
         cursorclass=pymysql.cursors.DictCursor,
     )
 
@@ -54,7 +54,7 @@ def mysql_container():
 def mysql_client(mysql_container):
     """Create a fresh MySQL connection after container restart."""
     host = mysql_container.get_container_host_ip()
-    port = mysql_container.get_exposed_port(3306)
+    port = int(mysql_container.get_exposed_port(3306))  # ✅ Convert port to integer
 
     for attempt in range(10):  # Retry logic for connecting to MySQL
         try:
@@ -63,7 +63,7 @@ def mysql_client(mysql_container):
                 user=MYSQL_USER,
                 password=MYSQL_PASSWORD,
                 database=MYSQL_DATABASE,
-                port=int(port),
+                port=port,  # ✅ Port is now an integer
                 cursorclass=pymysql.cursors.DictCursor,
             )
             print(f"✅ MySQL connection established on {host}:{port}")
