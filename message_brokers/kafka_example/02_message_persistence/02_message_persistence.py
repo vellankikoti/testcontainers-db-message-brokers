@@ -6,6 +6,7 @@ This example verifies that Kafka retains messages even after container restarts.
 
 import time
 import pytest
+import docker
 from testcontainers.core.container import DockerContainer
 from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
 from kafka.errors import KafkaError
@@ -28,11 +29,11 @@ def kafka_container():
         .with_volume_mapping("/tmp/kafka-data", "/var/lib/kafka/data") \
         .with_exposed_ports(9092) \
         .with_command(
-            "bash -c 'echo Waiting for Kafka... && sleep 20 && /etc/confluent/docker/run'"
+            "bash -c 'echo Waiting for Kafka... && sleep 30 && /etc/confluent/docker/run'"
         )
 
     container.start()
-    kafka_port = container.get_exposed_port(9092)
+    kafka_port = get_kafka_port(container)
     wait_for_kafka(kafka_port)  # Ensure Kafka is fully up
     yield container
     container.stop()
@@ -46,10 +47,25 @@ def kafka_bootstrap_server(kafka_container):
     Returns:
         str: The Kafka bootstrap server URL.
     """
-    return f"localhost:{kafka_container.get_exposed_port(9092)}"
+    return f"localhost:{get_kafka_port(kafka_container)}"
 
 
-def wait_for_kafka(port, timeout=60):
+def get_kafka_port(container):
+    """
+    Retrieves the correct exposed Kafka port from Docker.
+
+    Args:
+        container: The running Kafka container.
+
+    Returns:
+        int: The mapped Kafka port.
+    """
+    client = docker.from_env()
+    container_info = client.containers.get(container._container.id).attrs
+    return container_info["NetworkSettings"]["Ports"]["9092/tcp"][0]["HostPort"]
+
+
+def wait_for_kafka(port, timeout=90):
     """
     Waits for Kafka to be fully ready before allowing producers and consumers to connect.
 
@@ -67,9 +83,11 @@ def wait_for_kafka(port, timeout=60):
             topics = admin_client.list_topics()
             admin_client.close()
             if topics:  # Ensure Kafka is actually working
+                print(f"✅ Kafka is ready on localhost:{port}")
                 return
         except KafkaError:
             time.sleep(2)  # Retry every 2 seconds
+    raise TimeoutError(f"❌ Kafka did not start within {timeout} seconds")
 
 
 def restart_kafka(container):
@@ -82,10 +100,10 @@ def restart_kafka(container):
     Returns:
         None
     """
-    print("Restarting Kafka service inside the container...")
+    print("🔄 Restarting Kafka service inside the container...")
     container.exec_run("supervisorctl restart kafka")
     time.sleep(15)  # Give Kafka time to restart
-    wait_for_kafka(container.get_exposed_port(9092))  # Ensure Kafka is ready after restart
+    wait_for_kafka(get_kafka_port(container))  # Ensure Kafka is ready after restart
 
 
 def test_kafka_message_persistence(kafka_container, kafka_bootstrap_server):
