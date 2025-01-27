@@ -14,14 +14,9 @@ def rabbitmq_bootstrap_server():
     Pytest fixture to start a RabbitMQ container and provide its connection parameters.
 
     Returns:
-        dict: RabbitMQ connection parameters.
+        RabbitMqContainer: Running RabbitMQ container instance.
     """
     with RabbitMqContainer("rabbitmq:3.9-management") as rabbitmq:
         rabbitmq.start()
-        yield {
-            "container": rabbitmq,
-            "host": rabbitmq.get_connection_params()["host"],
-            "port": rabbitmq.get_connection_params()["port"],
-            "username": rabbitmq.get_connection_params()["username"],
-            "password": rabbitmq.get_connection_params()["password"]
-        }
+        time.sleep(5)  # Ensure RabbitMQ is fully ready
+        yield rabbitmq
