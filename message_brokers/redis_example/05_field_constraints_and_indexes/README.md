@@ -67,11 +67,9 @@ python3 -m pytest 05_field_constraints_and_indexes.py -v -s
 
 When you run the test, you should see output similar to this:  
 
-```
-✅ Unique key enforcement test passed!
-✅ Data type validation test passed!
-✅ TTL expiration test passed!
-```  
+![image](https://github.com/user-attachments/assets/00314357-653b-434e-a009-b7497fb5ce45)
+
+---
 
 If the test fails, possible errors might be:  
 - **Unique key constraint failed** (Duplicate key was allowed).  
