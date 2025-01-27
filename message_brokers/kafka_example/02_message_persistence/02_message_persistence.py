@@ -26,7 +26,7 @@ def kafka_container():
         .with_volume_mapping("/tmp/kafka-data", "/var/lib/kafka/data") \
         .with_exposed_ports(9092) \
         .with_command(
-            "bash -c 'echo Waiting for Kafka... && sleep 15 && /etc/confluent/docker/run'"
+            "bash -c 'echo Waiting for Kafka... && sleep 20 && /etc/confluent/docker/run'"
         )
 
     container.start()
@@ -61,9 +61,10 @@ def wait_for_kafka(port, timeout=40):
     while time.time() - start_time < timeout:
         try:
             admin_client = KafkaAdminClient(bootstrap_servers=f"localhost:{port}")
-            admin_client.list_topics()
+            topics = admin_client.list_topics()
             admin_client.close()
-            return  # Kafka is ready
+            if topics:  # Ensure Kafka is actually working
+                return
         except KafkaError:
             time.sleep(2)  # Retry every 2 seconds
 
@@ -88,7 +89,7 @@ def test_kafka_message_persistence(kafka_container, kafka_bootstrap_server):
 
     # Step 2: Restart Kafka using Docker restart (not stop/start)
     kafka_container._container.restart()
-    time.sleep(10)  # Give Kafka time to restart
+    time.sleep(15)  # Give Kafka time to restart
     new_bootstrap_server = f"localhost:{kafka_container.get_exposed_port(9092)}"
     wait_for_kafka(kafka_container.get_exposed_port(9092))  # Ensure Kafka is fully ready
 
