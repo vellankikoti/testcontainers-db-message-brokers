@@ -23,9 +23,9 @@ def mysql_container():
 
     print("🚀 Starting MySQL container...")
     mysql.start()
-    time.sleep(5)  # Ensure MySQL initializes properly
+    time.sleep(10)  # Ensure MySQL initializes properly
 
-    yield mysql
+    yield mysql  # Keep container running for the entire module
 
     print("🛑 Stopping MySQL container...")
     mysql.stop()
@@ -34,39 +34,51 @@ def mysql_container():
 @pytest.fixture(scope="function")
 def mysql_client(mysql_container):
     """Create a fresh MySQL connection after container restart."""
-    for _ in range(10):
+    host = mysql_container.get_container_host_ip()
+    port = mysql_container.get_exposed_port(3306)
+
+    for attempt in range(10):  # Retry logic for connecting to MySQL
         try:
             conn = pymysql.connect(
-                host=mysql_container.get_container_host_ip(),
+                host=host,
                 user=MYSQL_USER,
                 password=MYSQL_PASSWORD,
                 database=MYSQL_DATABASE,
-                port=mysql_container.get_exposed_port(3306),
+                port=int(port),
                 cursorclass=pymysql.cursors.DictCursor,
             )
+            print(f"✅ MySQL connection established on {host}:{port}")
             yield conn
             conn.close()
             return
-        except Exception:
-            print("🔄 Waiting for MySQL to become available...")
+        except Exception as e:
+            print(f"🔄 Waiting for MySQL to become available (Attempt {attempt + 1}/10)... {e}")
             time.sleep(2)
 
     pytest.fail("❌ MySQL did not start within the expected time!")
+
 
 @pytest.fixture(scope="function")
 def test_table(mysql_client):
     """Set up a dedicated test table for resilience testing."""
     cursor = mysql_client.cursor()
-    
-    # Create table if not exists
-    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(50), age INT);")
+
+    # Ensure table exists before running tests
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(50),
+            age INT
+        );
+    """)
 
     # Cleanup before and after tests
     cursor.execute("DELETE FROM users;")
     mysql_client.commit()
-    
-    yield cursor
-    
+
+    yield cursor  # Pass the cursor to tests
+
+    # Cleanup after test execution
     cursor.execute("DELETE FROM users;")
     mysql_client.commit()
     cursor.close()
