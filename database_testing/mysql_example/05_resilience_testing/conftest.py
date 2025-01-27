@@ -23,21 +23,30 @@ def mysql_container():
 
     print("🚀 Starting MySQL container...")
     mysql.start()
-    time.sleep(10)  # ✅ Ensure MySQL initializes properly
+    time.sleep(10)  # ✅ Ensures MySQL is fully initialized
 
     # Explicitly create `testuser` and grant permissions
     print("🔧 Configuring MySQL users...")
     host = mysql.get_container_host_ip()
     port = int(mysql.get_exposed_port(3306))  # ✅ Convert port to int
 
-    root_conn = pymysql.connect(
-        host=host,
-        user="root",
-        password=MYSQL_ROOT_PASSWORD,
-        database=MYSQL_DATABASE,
-        port=port,
-        cursorclass=pymysql.cursors.DictCursor,
-    )
+    # **First connection using ROOT**
+    for attempt in range(10):  # ✅ Retry connecting to root
+        try:
+            root_conn = pymysql.connect(
+                host=host,
+                user="root",
+                password=MYSQL_ROOT_PASSWORD,
+                database=MYSQL_DATABASE,
+                port=port,
+                cursorclass=pymysql.cursors.DictCursor,
+            )
+            break
+        except pymysql.err.OperationalError as e:
+            print(f"🔄 Waiting for MySQL root connection... Attempt {attempt + 1}/10: {e}")
+            time.sleep(2)
+    else:
+        pytest.fail("❌ MySQL root connection failed!")
 
     cursor = root_conn.cursor()
     cursor.execute(f"CREATE USER IF NOT EXISTS '{MYSQL_USER}'@'%' IDENTIFIED WITH mysql_native_password BY '{MYSQL_PASSWORD}';")
@@ -76,7 +85,7 @@ def mysql_client(mysql_container):
             yield conn
             conn.close()
             return
-        except Exception as e:
+        except pymysql.err.OperationalError as e:
             print(f"🔄 Waiting for MySQL to become available (Attempt {attempt + 1}/10)... {e}")
             time.sleep(2)
 
