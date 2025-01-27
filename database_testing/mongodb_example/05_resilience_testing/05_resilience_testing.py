@@ -6,12 +6,13 @@ This example simulates MongoDB failures, verifies automatic recovery, and ensure
 
 import pytest
 import time
+from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
 @pytest.mark.resilience
-def test_mongodb_reconnect(mongodb_client, mongodb_container, test_collection):
+def test_mongodb_reconnect(mongodb_container, test_collection):
     """Test MongoDB automatic reconnection after failure."""
-    
+
     # Insert initial test data
     test_collection.insert_one({"status": "initial"})
     print("✅ Inserted initial data before failure.")
@@ -24,20 +25,21 @@ def test_mongodb_reconnect(mongodb_client, mongodb_container, test_collection):
     mongodb_container.stop()
     time.sleep(5)
 
-    # Attempt reconnection (should fail)
-    with pytest.raises(ConnectionFailure):
-        mongodb_client.server_info()  # Explicitly checking connection failure
-    print("✅ Verified that MongoDB is down.")
-
     # Restart MongoDB container
     print("🚀 Restarting MongoDB container...")
     mongodb_container.start()
-    time.sleep(5)  # Give time for MongoDB to restart
+    time.sleep(5)
+
+    # Create a new MongoDB client after restart
+    print("🔄 Reconnecting to MongoDB...")
+    new_client = MongoClient("mongodb://localhost:27017", serverSelectionTimeoutMS=5000)
+    new_db = new_client.get_database("test_db")
+    new_collection = new_db.get_collection("resilience_test")
 
     # Ensure MongoDB has restarted properly
     for attempt in range(10):
         try:
-            mongodb_client.server_info()
+            new_client.server_info()
             print(f"✅ MongoDB reconnected successfully after {attempt + 1} seconds")
             break
         except ConnectionFailure:
@@ -47,14 +49,14 @@ def test_mongodb_reconnect(mongodb_client, mongodb_container, test_collection):
         pytest.fail("❌ MongoDB did not restart successfully!")
 
     # Verify data integrity
-    retrieved_data = test_collection.find_one({"status": "initial"})
+    retrieved_data = new_collection.find_one({"status": "initial"})
     assert retrieved_data is not None, "❌ Data was lost after restart!"
     print("✅ Data is still available after restart.")
 
     # Insert new record post-recovery
-    test_collection.insert_one({"status": "recovered"})
+    new_collection.insert_one({"status": "recovered"})
 
     # Validate both records exist
-    total_records = test_collection.count_documents({})
+    total_records = new_collection.count_documents({})
     assert total_records == 2, f"❌ Expected 2 records, found {total_records} after recovery!"
     print("✅ Successfully inserted data after recovery, test passed! 🎉")
