@@ -37,18 +37,19 @@ def mysql_container():
                 host=host,
                 user="root",
                 password=MYSQL_ROOT_PASSWORD,
-                database=MYSQL_DATABASE,
+                database="mysql",  # ✅ Connect to default `mysql` database
                 port=port,
                 cursorclass=pymysql.cursors.DictCursor,
             )
             break
         except pymysql.err.OperationalError as e:
             print(f"🔄 Waiting for MySQL root connection... Attempt {attempt + 1}/10: {e}")
-            time.sleep(2)
+            time.sleep(5)
     else:
         pytest.fail("❌ MySQL root connection failed!")
 
     cursor = root_conn.cursor()
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {MYSQL_DATABASE};")  # ✅ Ensure database exists
     cursor.execute(f"CREATE USER IF NOT EXISTS '{MYSQL_USER}'@'%' IDENTIFIED WITH mysql_native_password BY '{MYSQL_PASSWORD}';")
     cursor.execute(f"GRANT ALL PRIVILEGES ON {MYSQL_DATABASE}.* TO '{MYSQL_USER}'@'%';")
     cursor.execute("ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'rootpassword';")  # ✅ Fixes root access issues
