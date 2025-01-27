@@ -73,11 +73,7 @@ python3 -m pytest 03_data_integrity_testing.py -v -s
 
 When you run the test, you should see output similar to this:  
 
-```
-✅ Unique key insertion test passed!
-✅ Data retrieval test passed!
-✅ Expiration test passed!
-```  
+![image](https://github.com/user-attachments/assets/8ed5f83e-0824-4958-b7f6-91563873a0d7)
 
 ---
 
