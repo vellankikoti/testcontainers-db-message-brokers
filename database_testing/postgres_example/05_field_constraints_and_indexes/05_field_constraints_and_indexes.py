@@ -81,20 +81,23 @@ def test_index_performance(postgres_cursor):
     Ensures PostgreSQL queries using indexed fields execute efficiently.
 
     Steps:
-    1. Create a table with an index on the 'salary' column.
-    2. Insert multiple records with different salary values.
-    3. Execute a query using the indexed field.
-    4. Validate that the query executes successfully and retrieves the expected results.
+    1. Create a table with a 'salary' column.
+    2. Create an index on the 'salary' column.
+    3. Insert multiple records with different salary values.
+    4. Execute a query using the indexed field.
+    5. Validate that the query executes successfully and retrieves the expected results.
     """
     postgres_cursor.execute("DROP TABLE IF EXISTS employees")
     postgres_cursor.execute("""
         CREATE TABLE employees (
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
-            salary DECIMAL(10,2) NOT NULL,
-            INDEX (salary)
+            salary DECIMAL(10,2) NOT NULL
         )
     """)
+
+    # Create index separately (PostgreSQL syntax)
+    postgres_cursor.execute("CREATE INDEX salary_index ON employees(salary)")
 
     # Insert multiple records
     postgres_cursor.executemany(
