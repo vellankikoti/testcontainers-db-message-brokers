@@ -11,10 +11,17 @@ from testcontainers.rabbitmq import RabbitMqContainer
 @pytest.fixture(scope="session")
 def rabbitmq_bootstrap_server():
     """
-    Pytest fixture to start a RabbitMQ container and provide its connection URL.
+    Pytest fixture to start a RabbitMQ container and provide its connection parameters.
 
     Returns:
-        str: RabbitMQ connection URL.
+        dict: RabbitMQ connection parameters.
     """
     with RabbitMqContainer("rabbitmq:3.9-management") as rabbitmq:
-        yield rabbitmq.get_connection_url()
+        rabbitmq.start()
+        yield {
+            "container": rabbitmq,
+            "host": rabbitmq.get_connection_params()["host"],
+            "port": rabbitmq.get_connection_params()["port"],
+            "username": rabbitmq.get_connection_params()["username"],
+            "password": rabbitmq.get_connection_params()["password"]
+        }
