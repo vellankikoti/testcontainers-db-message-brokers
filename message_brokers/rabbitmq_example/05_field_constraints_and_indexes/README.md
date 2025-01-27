@@ -73,6 +73,7 @@ python3 -m pytest 05_field_constraints_and_indexes.py -v -s
 
 When you run the test, you should see output similar to:
 
+![image](https://github.com/user-attachments/assets/8806a24f-3cab-487a-8e45-247eccd18c7f)
 
 
 ---
