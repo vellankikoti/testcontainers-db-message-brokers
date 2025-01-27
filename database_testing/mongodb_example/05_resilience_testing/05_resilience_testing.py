@@ -1,11 +1,12 @@
 """
-05_resilience_testing.py - Demonstrates resilience testing in MongoDB with Testcontainers.
+05_resilience_testing.py - Demonstrates resilience testing in MongoDB with Docker API.
 
 This example simulates MongoDB failures, verifies automatic recovery, and ensures data integrity.
 """
 
 import pytest
 import time
+import docker
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
@@ -20,20 +21,22 @@ def test_mongodb_reconnect(mongodb_container, test_collection):
     # Ensure data is present before failure
     assert test_collection.find_one({"status": "initial"}) is not None
 
-    # Stop MongoDB container to simulate failure
-    print("🛑 Stopping MongoDB container...")
-    mongodb_container.stop()
+    # Simulate failure by pausing instead of stopping
+    print("🛑 Pausing MongoDB container...")
+    client = docker.from_env()
+    container = client.containers.get("mongodb-testcontainer")
+    container.pause()
     time.sleep(5)
 
-    # Restart MongoDB container
-    print("🚀 Restarting MongoDB container...")
-    mongodb_container.start()
+    # Unpause MongoDB container
+    print("🚀 Unpausing MongoDB container...")
+    container.unpause()
     time.sleep(5)
 
     # Ensure MongoDB is fully ready after restart
     print("🔄 Reconnecting to MongoDB...")
     mongo_url = "mongodb://localhost:27017"
-    
+
     for attempt in range(10):
         try:
             new_client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
