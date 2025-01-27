@@ -3,21 +3,34 @@ conftest.py - Shared fixtures for MongoDB resilience testing.
 """
 
 import pytest
+import time
 from testcontainers.mongodb import MongoDbContainer
 from pymongo import MongoClient
 
 @pytest.fixture(scope="module")
 def mongodb_container():
     """Start a MongoDB container and return the container object."""
-    with MongoDbContainer("mongo:6.0") as mongo:
-        yield mongo  # ✅ Return full container object (not just URL)
+    with MongoDbContainer("mongo:6.0").with_bind_ports(27017, 27017) as mongo:
+        time.sleep(3)  # Ensures MongoDB initializes properly
+        yield mongo  # ✅ Now returning full container instance
 
 @pytest.fixture(scope="module")
 def mongodb_client(mongodb_container):
     """Create a MongoDB client connected to the container."""
-    client = MongoClient(mongodb_container.get_connection_url())  # ✅ Correct usage of connection URL
-    yield client
-    client.close()
+    mongo_url = mongodb_container.get_connection_url()
+    
+    # Ensure MongoDB is responsive before proceeding
+    for _ in range(5):
+        try:
+            client = MongoClient(mongo_url, serverSelectionTimeoutMS=3000)
+            client.server_info()  # Test connection
+            yield client
+            client.close()
+            return
+        except Exception:
+            time.sleep(2)  # Retry every 2 seconds if connection fails
+
+    pytest.fail("MongoDB did not start within the expected time!")
 
 @pytest.fixture(scope="module")
 def test_collection(mongodb_client):
