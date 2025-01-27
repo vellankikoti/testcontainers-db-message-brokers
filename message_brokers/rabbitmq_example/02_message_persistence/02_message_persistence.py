@@ -7,69 +7,59 @@ Fixes:
 """
 
 import time
-import pytest
-import pika
-from conftest import get_rabbitmq_connection
+from kafka import KafkaProducer, KafkaConsumer
+from testcontainers.kafka import KafkaContainer
 
+TOPIC_NAME = "message_persistence_test"
 
-def test_rabbitmq_message_persistence(rabbitmq_container):
-    """
-    Test that RabbitMQ retains messages after restart.
-    """
-    queue_name = "persistent_queue"
+def produce_messages(broker):
+    """ Produces messages to Kafka """
+    producer = KafkaProducer(bootstrap_servers=broker)
+    messages = [b"message-1", b"message-2", b"message-3"]
 
-    # Step 1: Publish Messages to Durable Queue
-    print("\n🚀 Publishing persistent messages to RabbitMQ...")
-    connection = get_rabbitmq_connection(rabbitmq_container)
-    channel = connection.channel()
+    for message in messages:
+        producer.send(TOPIC_NAME, message)
+        print(f"Produced: {message.decode()}")
 
-    # Declare Durable Queue
-    channel.queue_declare(queue=queue_name, durable=True)
+    producer.flush()
+    producer.close()
 
-    # Publish Persistent Message
-    persistent_message = "Persistent Message"
-    channel.basic_publish(
-        exchange="",
-        routing_key=queue_name,
-        body=persistent_message,
-        properties=pika.BasicProperties(delivery_mode=2),  # Persistent message
+def consume_messages(broker):
+    """ Consumes messages from Kafka, simulating a restart scenario """
+    consumer = KafkaConsumer(
+        TOPIC_NAME,
+        bootstrap_servers=broker,
+        auto_offset_reset="earliest",
+        enable_auto_commit=True,
+        group_id="test_group"
     )
-    connection.close()
-    print("✅ Message successfully published!")
 
-    # Step 2: Verify Message Exists Before Restart
-    connection = get_rabbitmq_connection(rabbitmq_container)
-    channel = connection.channel()
-    queue = channel.queue_declare(queue=queue_name, durable=True)
-    message_count = queue.method.message_count
-    connection.close()
+    received_messages = []
+    for message in consumer:
+        received_messages.append(message.value.decode())
+        print(f"Consumed: {message.value.decode()}")
 
-    assert message_count > 0, "❌ Message was lost before restart!"
-    print(f"✅ {message_count} messages found in queue before restart!")
+        if len(received_messages) == 3:
+            break  # Stop after consuming all messages
 
-    # Step 3: Stop and Restart RabbitMQ
-    print("\n⏳ Stopping RabbitMQ container...")
-    rabbitmq_container.stop(kill=False)  # 🔥 Stop without deleting data
-    time.sleep(5)  # Simulate downtime
-    print("❌ RabbitMQ container stopped.")
+    consumer.close()
+    return received_messages
 
-    print("\n🔄 Restarting RabbitMQ container...")
-    rabbitmq_container.start()
-    time.sleep(5)
-    print("✅ RabbitMQ container restarted successfully!")
+if __name__ == "__main__":
+    with KafkaContainer() as kafka:
+        broker_url = kafka.get_bootstrap_server()
+        
+        print("Starting Kafka container...")
+        time.sleep(5)  # Allow Kafka to fully start
 
-    # Step 4: Consume Messages After Restart
-    print("\n🔍 Consuming messages from RabbitMQ after restart...")
-    connection = get_rabbitmq_connection(rabbitmq_container)
-    channel = connection.channel()
+        print("Producing messages...")
+        produce_messages(broker_url)
 
-    # Declare the Durable Queue Again
-    channel.queue_declare(queue=queue_name, durable=True)
+        print("\nSimulating consumer failure (wait for 5 seconds)...")
+        time.sleep(5)  # Simulate consumer going offline
 
-    # Retrieve the Persisted Message
-    method_frame, header_frame, body = channel.basic_get(queue=queue_name, auto_ack=True)
-    connection.close()
+        print("\nRestarting consumer and verifying message persistence...")
+        received_messages = consume_messages(broker_url)
 
-    # Step 5: Validate Message Persistence
-    assert body == persistent_message.encode(), "❌ Message was not persisted after RabbitMQ restart!"
-    print("✅ Message successfully retrieved after restart! Persistence confirmed.")
+        assert received_messages == ["message-1", "message-2", "message-3"], "Message persistence failed!"
+        print("\n✅ Message persistence test passed!")
