@@ -8,6 +8,7 @@ from testcontainers.mysql import MySqlContainer
 import pymysql
 
 # MySQL Configuration
+MYSQL_ROOT_PASSWORD = "rootpassword"  # Ensure root password is set first
 MYSQL_USER = "testuser"
 MYSQL_PASSWORD = "testpassword"
 MYSQL_DATABASE = "testdb"
@@ -16,16 +17,34 @@ MYSQL_DATABASE = "testdb"
 def mysql_container():
     """Start a MySQL container using Testcontainers."""
     mysql = MySqlContainer("mysql:8.0") \
-        .with_env("MYSQL_ROOT_PASSWORD", MYSQL_PASSWORD) \
-        .with_env("MYSQL_USER", MYSQL_USER) \
-        .with_env("MYSQL_PASSWORD", MYSQL_PASSWORD) \
+        .with_env("MYSQL_ROOT_PASSWORD", MYSQL_ROOT_PASSWORD) \
         .with_env("MYSQL_DATABASE", MYSQL_DATABASE)
 
     print("🚀 Starting MySQL container...")
     mysql.start()
     time.sleep(10)  # Ensure MySQL initializes properly
 
-    yield mysql  # Keep container running for the entire module
+    # Create test user explicitly
+    root_conn = pymysql.connect(
+        host=mysql.get_container_host_ip(),
+        user="root",
+        password=MYSQL_ROOT_PASSWORD,
+        database=MYSQL_DATABASE,
+        port=mysql.get_exposed_port(3306),
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+
+    cursor = root_conn.cursor()
+    cursor.execute(f"CREATE USER IF NOT EXISTS '{MYSQL_USER}'@'%' IDENTIFIED BY '{MYSQL_PASSWORD}';")
+    cursor.execute(f"GRANT ALL PRIVILEGES ON {MYSQL_DATABASE}.* TO '{MYSQL_USER}'@'%';")
+    cursor.execute("FLUSH PRIVILEGES;")
+    root_conn.commit()
+    cursor.close()
+    root_conn.close()
+
+    print("✅ MySQL user and permissions setup completed.")
+
+    yield mysql
 
     print("🛑 Stopping MySQL container...")
     mysql.stop()
