@@ -8,12 +8,40 @@ import pytest
 import time
 from kafka import KafkaProducer, KafkaConsumer
 from testcontainers.kafka import KafkaContainer
+from kafka.errors import KafkaError
 
 
 @pytest.fixture(scope="module")
 def kafka_container():
     """Starts a Kafka container using Testcontainers."""
-    with KafkaContainer() as kafka:
+    with KafkaContainer("confluentinc/cp-kafka:7.6.0") as kafka:
+        kafka.with_env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
+        kafka.with_env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
+        kafka.with_env("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
+        kafka.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
+        kafka.with_env("KAFKA_ZOOKEEPER_CONNECT", "localhost:2181")
+
+        kafka.with_exposed_ports(9092)
+        kafka.with_network_mode("bridge")
+
+        kafka.start()
+
+        # Wait for Kafka readiness
+        max_wait = 40
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            try:
+                consumer = KafkaConsumer(
+                    "test_topic",
+                    bootstrap_servers=kafka.get_bootstrap_server(),
+                    auto_offset_reset="earliest",
+                    enable_auto_commit=True
+                )
+                consumer.close()
+                break  # Kafka is ready!
+            except KafkaError:
+                time.sleep(2)
+
         yield kafka.get_bootstrap_server()
 
 
