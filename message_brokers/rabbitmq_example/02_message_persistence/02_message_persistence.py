@@ -7,6 +7,7 @@ This test ensures that RabbitMQ retains messages in a durable queue even after a
 import time
 import pytest
 import pika
+from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.rabbitmq import RabbitMqContainer
 
 
@@ -18,10 +19,15 @@ def rabbitmq_container():
     Returns:
         RabbitMqContainer: Running RabbitMQ container instance.
     """
-    container = RabbitMqContainer("rabbitmq:3.9-management")
+    container = RabbitMqContainer("rabbitmq:3.11-management").with_exposed_ports(5672, 15672)
     container.start()
-    time.sleep(10)  # Ensure RabbitMQ is fully up before returning
+
+    # Wait until RabbitMQ is fully ready
+    wait_for_logs(container, "Server startup complete", timeout=30)
+    time.sleep(5)
+
     yield container
+
     container.stop()
 
 
@@ -35,12 +41,11 @@ def get_rabbitmq_connection(container):
     Returns:
         pika.BlockingConnection: Connection to RabbitMQ.
     """
-    params = container.get_connection_params()
-    credentials = pika.PlainCredentials(username="guest", password="guest")
+    credentials = pika.PlainCredentials("guest", "guest")
 
     connection_params = pika.ConnectionParameters(
-        host=params.host,
-        port=params.port,
+        host=container.get_container_host_ip(),
+        port=container.get_exposed_port(5672),
         virtual_host="/",
         credentials=credentials,
         heartbeat=600,  # Prevents premature disconnects
@@ -87,12 +92,13 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
     # Step 2: Stop and restart RabbitMQ
     print("\nStopping RabbitMQ container...")
     rabbitmq_container.stop()
-    time.sleep(10)  # Simulate downtime
+    time.sleep(5)  # Simulate downtime
     print("RabbitMQ container stopped.")
 
     print("\nRestarting RabbitMQ container...")
     rabbitmq_container.start()
-    time.sleep(10)  # Ensure RabbitMQ is up
+    wait_for_logs(rabbitmq_container, "Server startup complete", timeout=30)
+    time.sleep(5)  # Ensure RabbitMQ is up
     print("RabbitMQ container restarted successfully!")
 
     # Step 3: Consume messages after restart
@@ -108,5 +114,5 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
     connection.close()
 
     # Step 4: Validate message persistence
-    assert body == persistent_message.encode(), "Message was not persisted after RabbitMQ restart!"
+    assert body == persistent_message.encode(), "❌ Message was not persisted after RabbitMQ restart!"
     print("✅ Message successfully retrieved after restart! Persistence confirmed.")
