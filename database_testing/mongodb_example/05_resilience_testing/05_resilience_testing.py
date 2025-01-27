@@ -1,7 +1,7 @@
 """
 05_resilience_testing.py - Demonstrates resilience testing in MongoDB with Testcontainers.
 
-This example shows how to handle MongoDB failures, simulate downtime, and ensure automatic recovery.
+This example simulates MongoDB failures, verifies automatic recovery, and ensures data integrity.
 """
 
 import pytest
@@ -14,35 +14,35 @@ def test_mongodb_reconnect(mongodb_client, mongodb_container, test_collection):
     
     # Insert initial test data
     test_collection.insert_one({"status": "initial"})
-    
-    # Verify data is present
+
+    # Ensure data is present before failure
     assert test_collection.find_one({"status": "initial"}) is not None
 
     # Stop MongoDB container to simulate failure
     mongodb_container.stop()
     time.sleep(5)
 
-    # Attempt to reconnect (should fail)
+    # Attempt reconnection (should fail)
     with pytest.raises(ConnectionFailure):
-        mongodb_client.server_info()  # Explicit connection check
+        mongodb_client.server_info()  # ✅ Explicit connection failure check
 
     # Restart MongoDB container
     mongodb_container.start()
     time.sleep(5)
 
-    # Wait for reconnection
-    for _ in range(5):  # Retry for up to 5 seconds
+    # Ensure MongoDB has restarted properly
+    for _ in range(5):
         try:
-            mongodb_client.server_info()  # Explicit reconnection check
+            mongodb_client.server_info()  # ✅ Test if MongoDB is back online
             break
         except ConnectionFailure:
-            time.sleep(1)
+            time.sleep(1)  # Retry up to 5 seconds
 
-    # Ensure the database reconnects and data is intact
+    # Verify data integrity
     assert test_collection.find_one({"status": "initial"}) is not None
 
-    # Insert a new record after recovery
+    # Insert new record post-recovery
     test_collection.insert_one({"status": "recovered"})
 
-    # Verify both records exist
+    # Validate both records exist
     assert test_collection.count_documents({}) == 2
