@@ -1,62 +1,46 @@
 """
-conftest.py - Shared fixtures for MySQL resilience testing using Docker API.
+conftest.py - Shared fixtures for MySQL resilience testing using Testcontainers.
 """
 
 import pytest
 import time
-import docker
+from testcontainers.mysql import MySqlContainer
 import pymysql
 
 MYSQL_USER = "testuser"
 MYSQL_PASSWORD = "testpassword"
 MYSQL_DATABASE = "testdb"
-MYSQL_PORT = 3306
 
 
 @pytest.fixture(scope="module")
 def mysql_container():
-    """Start a MySQL container with a fixed name to persist across restarts using Docker API."""
-    client = docker.from_env()
+    """Start a MySQL container using Testcontainers."""
+    mysql = MySqlContainer("mysql:8.0") \
+        .with_username(MYSQL_USER) \
+        .with_password(MYSQL_PASSWORD) \
+        .with_database(MYSQL_DATABASE)
 
-    try:
-        container = client.containers.get("mysql-testcontainer")
-        print("♻️ Reusing existing MySQL container...")
-        container.start()
-    except docker.errors.NotFound:
-        container = client.containers.run(
-            "mysql:8.0",
-            name="mysql-testcontainer",
-            environment={
-                "MYSQL_ROOT_PASSWORD": MYSQL_PASSWORD,
-                "MYSQL_USER": MYSQL_USER,
-                "MYSQL_PASSWORD": MYSQL_PASSWORD,
-                "MYSQL_DATABASE": MYSQL_DATABASE,
-            },
-            ports={"3306/tcp": MYSQL_PORT},
-            detach=True,
-            remove=False,  # Don't auto-remove container
-        )
-        print("🚀 Starting a new MySQL container...")
+    print("🚀 Starting MySQL container...")
+    mysql.start()
+    time.sleep(5)  # Ensure MySQL initializes properly
 
-    time.sleep(10)  # Ensure MySQL initializes properly
-
-    yield container
+    yield mysql
 
     print("🛑 Stopping MySQL container...")
-    container.stop()
+    mysql.stop()
 
 
 @pytest.fixture(scope="function")
-def mysql_client():
+def mysql_client(mysql_container):
     """Create a fresh MySQL connection after container restart."""
     for _ in range(10):
         try:
             conn = pymysql.connect(
-                host="localhost",
+                host=mysql_container.get_container_host_ip(),
                 user=MYSQL_USER,
                 password=MYSQL_PASSWORD,
                 database=MYSQL_DATABASE,
-                port=MYSQL_PORT,
+                port=mysql_container.get_exposed_port(3306),
                 cursorclass=pymysql.cursors.DictCursor,
             )
             yield conn
