@@ -8,29 +8,34 @@ from testcontainers.mysql import MySqlContainer
 import pymysql
 
 # MySQL Configuration
-MYSQL_ROOT_PASSWORD = "rootpassword"  # Ensure root password is set first
+MYSQL_ROOT_PASSWORD = "rootpassword"
 MYSQL_USER = "testuser"
 MYSQL_PASSWORD = "testpassword"
 MYSQL_DATABASE = "testdb"
 
 @pytest.fixture(scope="module")
 def mysql_container():
-    """Start a MySQL container using Testcontainers."""
+    """Start a MySQL container using Testcontainers with correct permissions."""
     mysql = MySqlContainer("mysql:8.0") \
         .with_env("MYSQL_ROOT_PASSWORD", MYSQL_ROOT_PASSWORD) \
-        .with_env("MYSQL_DATABASE", MYSQL_DATABASE)
+        .with_env("MYSQL_DATABASE", MYSQL_DATABASE) \
+        .with_env("MYSQL_ALLOW_EMPTY_PASSWORD", "yes")  # ✅ Allows root login without password
 
     print("🚀 Starting MySQL container...")
     mysql.start()
     time.sleep(10)  # Ensure MySQL initializes properly
 
-    # Create test user explicitly
+    # Explicitly create `testuser` after MySQL starts
+    print("🔧 Configuring MySQL users...")
+    host = mysql.get_container_host_ip()
+    port = int(mysql.get_exposed_port(3306))
+
     root_conn = pymysql.connect(
-        host=mysql.get_container_host_ip(),
+        host=host,
         user="root",
-        password=MYSQL_ROOT_PASSWORD,
+        password=MYSQL_ROOT_PASSWORD,  # May be empty due to MYSQL_ALLOW_EMPTY_PASSWORD
         database=MYSQL_DATABASE,
-        port=int(mysql.get_exposed_port(3306)),  # ✅ Ensure port is an integer
+        port=port,
         cursorclass=pymysql.cursors.DictCursor,
     )
 
@@ -54,7 +59,7 @@ def mysql_container():
 def mysql_client(mysql_container):
     """Create a fresh MySQL connection after container restart."""
     host = mysql_container.get_container_host_ip()
-    port = int(mysql_container.get_exposed_port(3306))  # ✅ Convert port to integer
+    port = int(mysql_container.get_exposed_port(3306))  # ✅ Ensuring port is an integer
 
     for attempt in range(10):  # Retry logic for connecting to MySQL
         try:
@@ -63,7 +68,7 @@ def mysql_client(mysql_container):
                 user=MYSQL_USER,
                 password=MYSQL_PASSWORD,
                 database=MYSQL_DATABASE,
-                port=port,  # ✅ Port is now an integer
+                port=port,
                 cursorclass=pymysql.cursors.DictCursor,
             )
             print(f"✅ MySQL connection established on {host}:{port}")
