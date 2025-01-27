@@ -2,23 +2,22 @@
 
 This example demonstrates how to use **Testcontainers** to test **field constraints and data integrity** in **Kafka**. It ensures that:
 
-- **Message format validation** prevents incorrect data from being published.
-- **Schema enforcement** ensures structured data.
+- **Message schema enforcement** prevents incorrect data formats.
 - **Duplicate message prevention** maintains data accuracy.
-- **Message ordering** is maintained.
+- **Message ordering** is preserved across production and consumption.
 
 ---
 
 ## **Overview**
 
-The test simulates a **real-world Kafka data validation scenario** by enforcing **schema validation, duplicate prevention, and ordered message processing**. It performs the following operations:
+This test simulates a **real-world Kafka data validation scenario** by enforcing **schema validation, duplicate prevention, and ordered message processing**. It performs the following operations:
 
-1. **Message Format Validation**: Ensures that only correctly formatted messages are published.
-2. **Schema Enforcement**: Uses JSON validation to ensure messages follow a predefined schema.
-3. **Duplicate Message Prevention**: Ensures no duplicate messages are published.
-4. **Message Ordering**: Validates that Kafka preserves the order of messages.
+1. **Message Schema Enforcement**: Ensures messages adhere to a predefined schema before being sent.
+2. **Duplicate Message Prevention**: Ensures no duplicate messages are produced or consumed.
+3. **Message Ordering Validation**: Ensures Kafka preserves the order of messages.
+4. **Invalid Message Handling**: Ensures incorrect messages are rejected.
 
-Each operation is validated using **assertions** to ensure expected results.
+Each operation is validated using **assertions** to ensure the expected results.
 
 ---
 
@@ -29,14 +28,14 @@ Each operation is validated using **assertions** to ensure expected results.
 - Automatically **starts and stops the container** before and after tests.
 
 ### **Field Constraints & Data Integrity**
-- **Schema Enforcement**: Ensures messages follow a predefined structure.
-- **Duplicate Prevention**: Ensures no duplicate messages are published or consumed.
-- **Ordering Validation**: Ensures messages are received in the same order as sent.
+- **Schema Enforcement**: Ensures messages follow a structured format.
+- **Duplicate Prevention**: Ensures no duplicate messages are processed.
+- **Ordering Validation**: Ensures messages are consumed in the order they were produced.
 
 ### **Assertions**
-- **Prevents invalid message formats**.
-- **Ensures message schema is followed**.
-- **Verifies message ordering and uniqueness**.
+- **Prevents invalid message formats** from being published.
+- **Ensures messages follow schema constraints**.
+- **Validates message ordering and uniqueness**.
 
 ---
 
@@ -46,13 +45,13 @@ Each operation is validated using **assertions** to ensure expected results.
 Ensure you have all required dependencies installed:
 
 ```bash
-pip install -r requirements.txt
+pip install pytest testcontainers kafka-python
 ```
 
 or
 
 ```bash
-pip3 install -r requirements.txt
+pip3 install pytest testcontainers kafka-python
 ```
 
 ### **2. Run the Test**
@@ -60,6 +59,12 @@ Execute the test using `pytest`:
 
 ```bash
 python3 -m pytest 05_kafka_field_constraints.py -v -s
+```
+
+or
+
+```bash
+python -m pytest 05_kafka_field_constraints.py -v -s
 ```
 
 ---
@@ -74,11 +79,11 @@ Producing valid messages to Kafka...
 Producing invalid messages to Kafka...
 ❌ Invalid message rejected as expected!
 
+Consuming messages from Kafka...
+
 Validating message order and uniqueness...
 ✅ Kafka data integrity validation PASSED! 🎉
 ```
-
----
 
 If the test fails, possible errors might be:
 - **Schema Enforcement Failed** (Invalid message was published).
