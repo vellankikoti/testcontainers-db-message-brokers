@@ -18,10 +18,11 @@ def rabbitmq_container():
     Returns:
         RabbitMqContainer: Running RabbitMQ container instance.
     """
-    with RabbitMqContainer("rabbitmq:3.9-management") as rabbitmq:
-        rabbitmq.start()
-        time.sleep(5)  # Ensure RabbitMQ is fully up before returning
-        yield rabbitmq
+    container = RabbitMqContainer("rabbitmq:3.9-management")
+    container.start()
+    time.sleep(10)  # Ensure RabbitMQ is fully up before returning
+    yield container
+    container.stop()
 
 
 def get_rabbitmq_connection(container):
@@ -35,7 +36,7 @@ def get_rabbitmq_connection(container):
         pika.BlockingConnection: Connection to RabbitMQ.
     """
     params = container.get_connection_params()
-    credentials = pika.PlainCredentials(params.username, params.password)
+    credentials = pika.PlainCredentials(username="guest", password="guest")
 
     connection_params = pika.ConnectionParameters(
         host=params.host,
@@ -86,12 +87,12 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
     # Step 2: Stop and restart RabbitMQ
     print("\nStopping RabbitMQ container...")
     rabbitmq_container.stop()
-    time.sleep(5)  # Simulate downtime
+    time.sleep(10)  # Simulate downtime
     print("RabbitMQ container stopped.")
 
     print("\nRestarting RabbitMQ container...")
     rabbitmq_container.start()
-    time.sleep(5)  # Ensure RabbitMQ is up
+    time.sleep(10)  # Ensure RabbitMQ is up
     print("RabbitMQ container restarted successfully!")
 
     # Step 3: Consume messages after restart
