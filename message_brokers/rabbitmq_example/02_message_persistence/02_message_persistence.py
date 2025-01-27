@@ -7,10 +7,15 @@ Fixes:
 """
 
 import time
+import pytest
 from kafka import KafkaProducer, KafkaConsumer
-from testcontainers.kafka import KafkaContainer
 
 TOPIC_NAME = "message_persistence_test"
+
+@pytest.fixture(scope="module")
+def kafka_bootstrap(kafka_container):
+    """ Returns the Kafka bootstrap server from the test container """
+    return kafka_container
 
 def produce_messages(broker):
     """ Produces messages to Kafka """
@@ -23,9 +28,10 @@ def produce_messages(broker):
 
     producer.flush()
     producer.close()
+    return messages
 
 def consume_messages(broker):
-    """ Consumes messages from Kafka, simulating a restart scenario """
+    """ Consumes messages from Kafka """
     consumer = KafkaConsumer(
         TOPIC_NAME,
         bootstrap_servers=broker,
@@ -45,21 +51,19 @@ def consume_messages(broker):
     consumer.close()
     return received_messages
 
-if __name__ == "__main__":
-    with KafkaContainer() as kafka:
-        broker_url = kafka.get_bootstrap_server()
-        
-        print("Starting Kafka container...")
-        time.sleep(5)  # Allow Kafka to fully start
+def test_produce_messages(kafka_bootstrap):
+    """ Test if messages are successfully produced """
+    print("\nProducing messages...")
+    messages = produce_messages(kafka_bootstrap)
+    assert len(messages) == 3, "Not all messages were produced!"
 
-        print("Producing messages...")
-        produce_messages(broker_url)
+def test_consume_messages(kafka_bootstrap):
+    """ Test if messages persist even after consumer restart """
+    print("\nConsuming messages after simulated failure...")
+    
+    # Simulating a delay to mimic consumer failure
+    time.sleep(5)
 
-        print("\nSimulating consumer failure (wait for 5 seconds)...")
-        time.sleep(5)  # Simulate consumer going offline
-
-        print("\nRestarting consumer and verifying message persistence...")
-        received_messages = consume_messages(broker_url)
-
-        assert received_messages == ["message-1", "message-2", "message-3"], "Message persistence failed!"
-        print("\n✅ Message persistence test passed!")
+    received_messages = consume_messages(kafka_bootstrap)
+    assert received_messages == ["message-1", "message-2", "message-3"], "Message persistence failed!"
+    print("\n✅ Message persistence test passed!")
