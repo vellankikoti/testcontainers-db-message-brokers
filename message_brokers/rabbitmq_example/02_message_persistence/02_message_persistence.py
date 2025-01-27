@@ -14,15 +14,19 @@ from testcontainers.rabbitmq import RabbitMqContainer
 @pytest.fixture(scope="module")
 def rabbitmq_container():
     """
-    Pytest fixture to start a RabbitMQ container.
+    Pytest fixture to start a RabbitMQ container with persistent storage.
 
     Returns:
         RabbitMqContainer: Running RabbitMQ container instance.
     """
-    container = RabbitMqContainer("rabbitmq:3.11-management").with_exposed_ports(5672, 15672)
+    container = RabbitMqContainer("rabbitmq:3.11-management") \
+        .with_bind_ports(5672, 5672) \
+        .with_bind_ports(15672, 15672) \
+        .with_volume_mapping("/tmp/rabbitmq-data", "/var/lib/rabbitmq", mode="rw")  # Persistent storage
+
     container.start()
 
-    # Wait until RabbitMQ is fully ready
+    # Wait for RabbitMQ to fully start
     wait_for_logs(container, "Server startup complete", timeout=30)
     time.sleep(5)
 
@@ -45,7 +49,7 @@ def get_rabbitmq_connection(container):
 
     connection_params = pika.ConnectionParameters(
         host=container.get_container_host_ip(),
-        port=container.get_exposed_port(5672),
+        port=int(container.get_exposed_port(5672)),
         virtual_host="/",
         credentials=credentials,
         heartbeat=600,  # Prevents premature disconnects
@@ -61,7 +65,7 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
     - Messages persist across RabbitMQ restarts.
 
     Steps:
-        1. Start a RabbitMQ container.
+        1. Start a RabbitMQ container with persistent storage.
         2. Publish persistent messages to a durable queue.
         3. Stop and restart RabbitMQ.
         4. Consume messages and validate:
@@ -111,6 +115,7 @@ def test_rabbitmq_message_persistence(rabbitmq_container):
 
     # Retrieve the persisted message
     method_frame, header_frame, body = channel.basic_get(queue=queue_name, auto_ack=True)
+
     connection.close()
 
     # Step 4: Validate message persistence
