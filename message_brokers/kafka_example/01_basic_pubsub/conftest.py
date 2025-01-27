@@ -1,38 +1,57 @@
 """
-conftest.py - Shared fixture for Kafka Testcontainers.
+conftest.py - Shared Kafka fixture for Testcontainers.
 """
 
 import pytest
 import time
+from kafka import KafkaAdminClient, KafkaProducer, KafkaConsumer
 from testcontainers.kafka import KafkaContainer
-from kafka import KafkaAdminClient
-from kafka.errors import KafkaError
 
 
 @pytest.fixture(scope="session")
 def kafka_container():
-    """Starts a fully working Kafka container for testing."""
-    with KafkaContainer("confluentinc/cp-kafka:7.6.0") as kafka:
-        # Configure Kafka to work correctly inside Testcontainers
-        kafka.with_env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
-        kafka.with_env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
-        kafka.with_env("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
-        kafka.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
+    """Starts a Kafka container using Testcontainers and ensures it's ready."""
+    with KafkaContainer("confluentinc/cp-kafka:latest") as kafka:
+        bootstrap_server = kafka.get_bootstrap_server()
 
-        kafka.with_exposed_ports(9092)  # ✅ Ensures Kafka port is accessible
-
-        kafka.start()  # ✅ Start the container
-
-        # ✅ Explicit wait for Kafka readiness using Admin API
-        max_wait = 40  # Wait max 40 seconds
+        # ✅ Wait until Kafka is fully available
+        max_wait_time = 30  # Max wait time in seconds
         start_time = time.time()
-        while time.time() - start_time < max_wait:
+
+        while time.time() - start_time < max_wait_time:
             try:
-                admin_client = KafkaAdminClient(bootstrap_servers=kafka.get_bootstrap_server())
+                admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_server)
                 topics = admin_client.list_topics()
-                if topics is not None:  # Kafka is ready
-                    break
-            except KafkaError:
+                if topics is not None:
+                    break  # Kafka is ready
+            except Exception:
                 time.sleep(2)  # Retry every 2 seconds
 
-        yield kafka.get_bootstrap_server()
+        yield bootstrap_server  # Return Kafka connection string
+
+
+@pytest.fixture
+def kafka_producer(kafka_container):
+    """Creates a Kafka producer."""
+    producer = KafkaProducer(
+        bootstrap_servers=kafka_container,
+        value_serializer=lambda v: v.encode("utf-8"),
+        acks="all",
+        retries=5
+    )
+    yield producer
+    producer.close()
+
+
+@pytest.fixture
+def kafka_consumer(kafka_container):
+    """Creates a Kafka consumer."""
+    consumer = KafkaConsumer(
+        "test_topic",
+        bootstrap_servers=kafka_container,
+        value_deserializer=lambda x: x.decode("utf-8"),
+        auto_offset_reset="earliest",
+        enable_auto_commit=True
+    )
+    yield consumer
+    consumer.close()
