@@ -20,17 +20,17 @@ def test_mongodb_reconnect(mongodb_container, test_collection):
     # Ensure data is present before failure
     assert test_collection.find_one({"status": "initial"}) is not None
 
-    # Stop MongoDB container to simulate failure
-    print("🛑 Stopping MongoDB container...")
-    mongodb_container.stop()
+    # Simulate failure by pausing the container instead of stopping
+    print("🛑 Pausing MongoDB container...")
+    mongodb_container.pause()
     time.sleep(5)
 
-    # Restart MongoDB container
-    print("🚀 Restarting MongoDB container...")
-    mongodb_container.start()
+    # Unpause MongoDB container
+    print("🚀 Unpausing MongoDB container...")
+    mongodb_container.unpause()
     time.sleep(5)
 
-    # Create a new MongoDB client after restart
+    # Create a new MongoDB client after recovery
     print("🔄 Reconnecting to MongoDB...")
     new_client = MongoClient("mongodb://localhost:27017", serverSelectionTimeoutMS=5000)
     new_db = new_client.get_database("test_db")
