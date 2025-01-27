@@ -4,6 +4,7 @@ conftest.py - Shared test configuration for RabbitMQ Testcontainers.
 This file provides a fixture to start a RabbitMQ container before running tests.
 """
 
+import time
 import pytest
 from testcontainers.rabbitmq import RabbitMqContainer
 
@@ -16,7 +17,8 @@ def rabbitmq_bootstrap_server():
     Returns:
         RabbitMqContainer: Running RabbitMQ container instance.
     """
-    with RabbitMqContainer("rabbitmq:3.9-management") as rabbitmq:
-        rabbitmq.start()
-        time.sleep(5)  # Ensure RabbitMQ is fully ready
-        yield rabbitmq
+    container = RabbitMqContainer("rabbitmq:3.9-management")
+    container.start()
+    time.sleep(10)  # Ensure RabbitMQ is fully ready
+    yield container
+    container.stop()
