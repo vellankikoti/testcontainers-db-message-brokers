@@ -3,73 +3,39 @@ conftest.py - Shared Kafka fixture using Testcontainers.
 """
 
 import pytest
+from testcontainers.kafka import KafkaContainer
+
+@pytest.fixture(scope="module")
+def kafka_container():
+    """Starts a Kafka container and provides the bootstrap server URL."""
+    with KafkaContainer("confluentinc/cp-kafka:latest") as kafka:
+        yield kafka.get_bootstrap_server()
+
+
+# File: 01_basic_pubsub.py
+
+from kafka import KafkaProducer, KafkaConsumer
 import time
-from kafka import KafkaAdminClient, KafkaProducer, KafkaConsumer
-from testcontainers.core.container import DockerContainer
+import pytest
 
-
-@pytest.fixture(scope="session")
-def zookeeper_container():
-    """Starts Zookeeper using Testcontainers."""
-    with DockerContainer("confluentinc/cp-zookeeper:latest") as zookeeper:
-        zookeeper.with_env("ZOOKEEPER_CLIENT_PORT", "2181")
-        zookeeper.with_exposed_ports(2181)
-        zookeeper.start()
-        yield f"localhost:{zookeeper.get_exposed_port(2181)}"
-
-
-@pytest.fixture(scope="session")
-def kafka_container(zookeeper_container):
-    """Starts Kafka using Testcontainers and ensures it's ready."""
-    with DockerContainer("confluentinc/cp-kafka:latest") as kafka:
-        kafka.with_env("KAFKA_BROKER_ID", "1")
-        kafka.with_env("KAFKA_ZOOKEEPER_CONNECT", zookeeper_container)
-        kafka.with_env("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
-        kafka.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
-        kafka.with_env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
-        kafka.with_exposed_ports(9092)
-
-        kafka.start()
-
-        # ✅ Wait until Kafka is fully ready
-        bootstrap_server = f"localhost:{kafka.get_exposed_port(9092)}"
-        max_wait_time = 30  # Max wait time in seconds
-        start_time = time.time()
-
-        while time.time() - start_time < max_wait_time:
-            try:
-                admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_server)
-                topics = admin_client.list_topics()
-                if topics is not None:
-                    break  # ✅ Kafka is ready!
-            except Exception:
-                time.sleep(2)  # Retry every 2 seconds
-
-        yield bootstrap_server
-
-
-@pytest.fixture
-def kafka_producer(kafka_container):
-    """Creates a Kafka producer."""
-    producer = KafkaProducer(
-        bootstrap_servers=kafka_container,
-        value_serializer=lambda v: v.encode("utf-8"),
-        acks="all",
-        retries=5
-    )
-    yield producer
-    producer.close()
-
-
-@pytest.fixture
-def kafka_consumer(kafka_container):
-    """Creates a Kafka consumer."""
+def test_basic_pubsub(kafka_container):
+    """Tests basic Kafka publish-subscribe using Testcontainers."""
+    topic = "test_topic"
+    message = b"Hello, Kafka!"
+    
+    # Kafka Producer
+    producer = KafkaProducer(bootstrap_servers=kafka_container)
+    producer.send(topic, message)
+    producer.flush()
+    
+    # Kafka Consumer
     consumer = KafkaConsumer(
-        "test_topic",
-        bootstrap_servers=kafka_container,
-        value_deserializer=lambda x: x.decode("utf-8"),
+        topic, 
+        bootstrap_servers=kafka_container, 
         auto_offset_reset="earliest",
-        enable_auto_commit=True
+        enable_auto_commit=True,
+        consumer_timeout_ms=5000  # Timeout in case no message is received
     )
-    yield consumer
-    consumer.close()
+    
+    received_message = next(consumer)
+    assert received_message.value == message, "Kafka message mismatch!"
