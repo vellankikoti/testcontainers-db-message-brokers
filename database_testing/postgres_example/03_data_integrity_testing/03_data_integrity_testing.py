@@ -10,17 +10,11 @@ This test ensures that:
 
 import pytest
 import psycopg2
-from psycopg2 import sql, errors
+from psycopg2 import errors
 
 def test_unique_constraint(postgres_cursor):
     """
     Ensures PostgreSQL prevents duplicate entries using a UNIQUE constraint.
-
-    Steps:
-    1. Create a users table with a UNIQUE constraint on 'email'.
-    2. Insert a valid record.
-    3. Attempt to insert a duplicate record (should fail).
-    4. Validate that PostgreSQL rejects the duplicate entry.
     """
     postgres_cursor.execute("DROP TABLE IF EXISTS users")
     postgres_cursor.execute("""
@@ -32,7 +26,6 @@ def test_unique_constraint(postgres_cursor):
     """)
 
     try:
-        # Insert a valid record
         postgres_cursor.execute("INSERT INTO users (email, name) VALUES (%s, %s)", ("alice@example.com", "Alice"))
         postgres_cursor.execute("INSERT INTO users (email, name) VALUES (%s, %s)", ("alice@example.com", "Duplicate Alice"))
         print("❌ Unique Constraint Failed: Duplicate Allowed.")
@@ -44,12 +37,6 @@ def test_unique_constraint(postgres_cursor):
 def test_transaction_atomicity(postgres_cursor):
     """
     Ensures PostgreSQL transactions maintain atomicity (all or nothing).
-
-    Steps:
-    1. Create an orders table.
-    2. Start a transaction and insert multiple records.
-    3. Force a failure after one insert.
-    4. Ensure that no records are committed.
     """
     postgres_cursor.execute("DROP TABLE IF EXISTS orders")
     postgres_cursor.execute("""
@@ -76,12 +63,6 @@ def test_transaction_atomicity(postgres_cursor):
 def test_foreign_key_constraint(postgres_cursor):
     """
     Ensures PostgreSQL enforces foreign key constraints.
-
-    Steps:
-    1. Create a parent (customers) and child (orders) table with a foreign key.
-    2. Insert a valid parent record.
-    3. Attempt to insert an order with a non-existent customer (should fail).
-    4. Validate that PostgreSQL rejects the orphaned record.
     """
     postgres_cursor.execute("DROP TABLE IF EXISTS orders")
     postgres_cursor.execute("DROP TABLE IF EXISTS customers")
@@ -108,4 +89,7 @@ def test_foreign_key_constraint(postgres_cursor):
     try:
         # Attempt to insert an order with a non-existent customer_id
         postgres_cursor.execute("INSERT INTO orders (customer_id, amount) VALUES (%s, %s)", (999, 25.00))
-        print("❌ Foreign Key Constraint Failed: Orphan
+        print("❌ Foreign Key Constraint Failed: Orphaned record allowed.")
+    except errors.ForeignKeyViolation:
+        print("✅ Foreign Key Constraint Passed: Orphaned record prevented.")
+        postgres_cursor.connection.rollback()
