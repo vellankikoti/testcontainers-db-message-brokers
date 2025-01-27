@@ -9,10 +9,11 @@ from pymongo import MongoClient
 
 @pytest.fixture(scope="module")
 def mongodb_container():
-    """Start a MongoDB container and return the container object."""
+    """Start a MongoDB container with persistent storage."""
     with MongoDbContainer("mongo:6.0").with_bind_ports(27017, 27017) as mongo:
+        print("🚀 Starting MongoDB container with persistent storage...")
         time.sleep(3)  # Ensures MongoDB initializes properly
-        yield mongo  # ✅ Now returning full container instance
+        yield mongo  # ✅ Returning full container instance
 
 @pytest.fixture(scope="module")
 def mongodb_client(mongodb_container):
@@ -30,7 +31,7 @@ def mongodb_client(mongodb_container):
         except Exception:
             time.sleep(2)  # Retry every 2 seconds if connection fails
 
-    pytest.fail("MongoDB did not start within the expected time!")
+    pytest.fail("❌ MongoDB did not start within the expected time!")
 
 @pytest.fixture(scope="module")
 def test_collection(mongodb_client):
